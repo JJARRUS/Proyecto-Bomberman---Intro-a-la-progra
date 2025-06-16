@@ -2,10 +2,9 @@ import tkinter as tk
 import pygame
 import os
 
-
-
 pygame.mixer.init()
 musica_activada = True
+
 def activar(nivel_actual):
     if nivel_actual == 4:
         nombre_archivo = "musica_boss.mp3"
@@ -15,8 +14,10 @@ def activar(nivel_actual):
     if os.path.exists(archivo_musica):
         pygame.mixer.music.load(archivo_musica)
         pygame.mixer.music.play(-1)
+        
 def detener():
     pygame.mixer.music.stop()
+    
 def musica():
     global musica_activada
     if musica_activada:
@@ -30,10 +31,12 @@ def musica():
 
 actual = os.path.abspath(__file__)
 proyecto_bomberman = os.path.dirname(os.path.dirname(actual))
+
 Principal = tk.Tk()
 Principal.title("Pantalla de Configuracion")
 Principal.geometry("600x600")
 Principal.configure(bg="black")
+
 font_configuracion = ("Fixedsys", 24, "bold")  
 font_audio = ("Fixedsys", 18, "bold")          
 font_boton = ("Fixedsys", 14, "bold")       
