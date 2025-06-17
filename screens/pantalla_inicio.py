@@ -1,4 +1,6 @@
 from features.imports import *
+from screens.pantalla_personalizacion import mostrar_pantalla_personalizacion
+from screens.pantalla_final import mostrar_pantalla_final #Se usará más adelante
 
 def mostrar_pantalla_inicio(ventana):
     reloj = pygame.time.Clock() #Esto nos ayudara a controlar los FPS
@@ -26,7 +28,7 @@ def mostrar_pantalla_inicio(ventana):
             #Ejemplo: "print("Iniciar Juego")" se elimina y se pone "mostrar_pantalla_info(ventana)"
             elif evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1:  #Clic izquierdo
                 if boton_jugar.collidepoint(evento.pos):  # ejecuta si se hizo clic sobre el área de "Jugar"
-                    print("Iniciar Juego")
+                    mostrar_pantalla_personalizacion(ventana)
 
                 elif boton_config.collidepoint(evento.pos):  # clic sobre "Configuración"
                     print("Configuración")
@@ -41,8 +43,8 @@ def mostrar_pantalla_inicio(ventana):
                     pygame.quit()
                     sys.exit()
 
-        #Actualización de la pantalla para mostrar cambios.
+        #Actualización de la pantalla para mostrar cambios. 
         pygame.display.update()
         
-        #Mantenemos el bucle ejecutandose a 60 FPS.
+        #Mantenemos el bucle ejecutandose a 60 FPS. FIXME
         reloj.tick(60)
