@@ -1,19 +1,21 @@
 from features.imports import *
 
+#---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---#
+
+#Función de la pantalla final:
 def mostrar_pantalla_final(ventana, nombre, puntaje, duración, victoria=True):
     reloj = pygame.time.Clock()
     fuente = pygame.font.SysFont("Arial", 32, bold=4)
     
+    #--- Mensaje final (Victoria o Derrota) ---#
     mensaje = "¡VICTORIA!" if victoria else "DERROTADO"
 
-            #VERDE                       #ROJO
+        #--- VERDE: Victoria            ROJO: Derrota ---#
     color = (0, 255, 0) if victoria else (255, 0, 0)
     
     #Opciones al finalizar el juego:
     boton_menu = pygame.Rect(200, 400, 180, 50)
     boton_salir = pygame.Rect(420, 400, 180, 50)
-
-
 
     corriendo = True
     while corriendo:
@@ -33,7 +35,7 @@ def mostrar_pantalla_final(ventana, nombre, puntaje, duración, victoria=True):
         
 #---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---#
 
-#EDICIÖN DE PANTALLA:        
+#EDICIÓN DE PANTALLA:        
 
         for i, linea in enumerate(info_user):
         #i = índice de la lista "info_user"
@@ -45,7 +47,7 @@ def mostrar_pantalla_final(ventana, nombre, puntaje, duración, victoria=True):
         pygame.draw.rect(ventana, (0, 100, 200), boton_menu)
         pygame.draw.rect(ventana, (200, 50, 50), boton_salir)
 
-        #Ponemos el texto dentro de los botones
+        #Ponemos el texto dentro de los botones:
         ventana.blit(fuente.render("Menú principal", True, (255, 255, 255)), (boton_menu.x + 10, boton_menu.y + 10))
         ventana.blit(fuente.render("Salir", True, (255, 255, 255)), (boton_salir.x + 50, boton_salir.y + 10))
 
@@ -61,7 +63,7 @@ def mostrar_pantalla_final(ventana, nombre, puntaje, duración, victoria=True):
             #Si se hace click izq:
             elif evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1:
                 
-                #Si el evento esta pasando dentro del botón de volver al menú, 
+                #Si el click esta dentro del botón de volver al menú, 
                 # entonces volvemos al menú principal.
                 if boton_menu.collidepoint(evento.pos):
                     from screens.pantalla_inicio import mostrar_pantalla_inicio

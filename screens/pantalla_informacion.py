@@ -1,6 +1,5 @@
-import tkinter as tk
-from PIL import Image, ImageTk
-import os
+from features.imports import *
+from features.config import musica_activada, cargar_musica
 
 class PantallaInformacion:
     def __init__(self, ventana):
@@ -8,10 +7,57 @@ class PantallaInformacion:
         self.ventana.title("Información")
         self.ventana.geometry("800x600")
         self.ventana.configure(bg="black")
+        
+        #Scrollbar:
+        main_frame = tk.Frame(ventana, bg="black")
+        main_frame.pack(fill="both", expand=True)
+        
+        canvas = tk.Canvas(main_frame, bg="black", highlightthickness=0)
+        scrollbar = tk.Scrollbar(main_frame, orient="vertical", command=canvas.yview)
+        scrollable_frame = tk.Frame(canvas, bg="black")
+
+        scrollable_frame.bind(
+            "<Configure>", lambda e: canvas.configure(
+                scrollregion=canvas.bbox("all")
+                )
+            )
+        
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        self.abajo = scrollable_frame
         self.fuente = ("Fixedsys", 12)
-        self.abajo = tk.Frame(ventana, bg="black")
-        self.abajo.pack(pady=10, padx=20, fill="both", expand=True)
+
+        # Botón Volver
+        tk.Button(ventana, text="Volver", command=self.volver,
+                font=self.fuente, bg="red", fg="white").pack(pady=20)
+        
         self.datos_autores()
+        
+        # Hacer que la ventana sea modal y centrada
+        ventana.grab_set()  # Hacer que la ventana sea modal
+        ventana.focus_set()  # Dar focus a la ventana
+        
+        # Configurar el evento de cerrar ventana
+        ventana.protocol("WM_DELETE_WINDOW", self.volver)
+        
+        #--- Agregado de música ---#
+        # Solo cargar música si está activada
+        if musica_activada:
+            try:
+                cargar_musica()
+            except:
+                pass  # Si falla, continuamos sin música
+
+    def volver(self):
+        """Cierra la ventana de información y vuelve al menú"""
+        self.ventana.quit()  # Salir del mainloop
+        self.ventana.destroy()  # Destruir la ventana
+        # No importamos main aquí para evitar imports circulares
+        # El main manejará la reactivación de música
 
     def datos_autores(self):
         tk.Label(self.abajo, text="Pantalla de Información", font=("Fixedsys", 18), bg="black", fg="red").pack(pady=10)
@@ -32,19 +78,22 @@ class PantallaInformacion:
         self.mostrar_info("Versión del Programa", "1.0")
         tk.Label(self.abajo, text="\nInformación del juego", font=("Fixedsys", 14), bg="black", fg="red").pack(anchor="w", pady=(10, 0), padx=10)
 
-        ayuda = "- Movimiento: w (arriba), a (izquierda), d (derecha)"
+        ayuda = "- Movimiento: w (arriba), a (izquierda), d (derecha), s (abajo)"
         tk.Label(self.abajo, text=ayuda, font=self.fuente, bg="black", fg="white", justify="left", wraplength=760).pack(anchor="w", padx=20, pady=(5, 10))
 
     def mostrar_autor(self, nombre, carnet, archivos_foto):
         autor = tk.Frame(self.abajo, bg="black")
         autor.pack(pady=5)
         if archivos_foto and os.path.exists(archivos_foto):
-            imagen_original = Image.open(archivos_foto)
-            imagen_redimensionada = imagen_original.resize((100, 100), Image.Resampling.LANCZOS) #nueva version
-            imagen_tk = ImageTk.PhotoImage(imagen_redimensionada)
-            imagen_ajustar = tk.Label(autor, image=imagen_tk, bg="black")
-            imagen_ajustar.image = imagen_tk
-            imagen_ajustar.pack(side="left", padx=10)
+            try:
+                imagen_original = Image.open(archivos_foto)
+                imagen_redimensionada = imagen_original.resize((100, 100), Image.Resampling.LANCZOS) #nueva version
+                imagen_tk = ImageTk.PhotoImage(imagen_redimensionada)
+                imagen_ajustar = tk.Label(autor, image=imagen_tk, bg="black")
+                imagen_ajustar.image = imagen_tk
+                imagen_ajustar.pack(side="left", padx=10)
+            except Exception as e:
+                print(f"Error cargando imagen {archivos_foto}: {e}")
         texto = nombre + "\nCarnet: " + carnet
         tk.Label(autor, text=texto, font=self.fuente, bg="black", fg="white", justify="left").pack(side="left")
 
@@ -73,4 +122,3 @@ La funcion mostrar_autor muestra a la persona , verifica que existe y redimensio
 La funcion mostrar_info se usa para colocar etiquetas en la misma linea.
 El if __nam__ crea la ventana de aplicacion
 """
-
