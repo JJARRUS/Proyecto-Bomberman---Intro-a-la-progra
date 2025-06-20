@@ -1,14 +1,17 @@
 from features.imports import *
 from classes.jugador import Jugador
 
+#---0--- PANTALLA PERSONALIZACIÓN ---0---#
+
 def mostrar_pantalla_personalizacion(ventana):
+    
     reloj = pygame.time.Clock()
     fuente = pygame.font.SysFont("arial", 28)
 
     # Configuración de personajes
     personajes = {
-        1: {"nombre": "Bombman", "path": "assets/personajes/PJ1/bombman_pj1.png"},
-        2: {"nombre": "Bombgirl", "path": "assets/personajes/PJ2/bombgirl_pj2.png"},
+        1: {"nombre": "Bomberman", "path": "assets/personajes/PJ1/bombman_pj1.png"},
+        2: {"nombre": "Bombergirl", "path": "assets/personajes/PJ2/bombgirl_pj2.png"},
         3: {"nombre": "The Chosen One", "path": "assets/personajes/PJ3/the_chosen_one_pj3.png"}
     }
 
@@ -17,31 +20,34 @@ def mostrar_pantalla_personalizacion(ventana):
     personaje_seleccionado = 1
     input_activo = False
     
-    # Elementos UI
+    #--- BOTONES ---#
     boton_continuar = pygame.Rect(300, 450, 200, 50)
     boton_volver = pygame.Rect(50, 500, 120, 40)
     input_rect = pygame.Rect(250, 150, 300, 40)
     
+    #---0--- Si la ventana esta corriendo entonces: ---0---#
     corriendo = True
     while corriendo:
-        ventana.fill((30, 30, 60))
         
-        # Título
+        #Un color de fondo:
+        ventana.fill((30, 30, 60)) 
+        
+        #Título:
         titulo = fuente.render("Selecciona tu Personaje", True, (255, 255, 255))
         ventana.blit(titulo, (250, 50))
         
-        # Entrada de nombre
+        #Entrada de nombre:
         pygame.draw.rect(ventana, (255, 255, 255) if input_activo else (100, 100, 100), input_rect, 2)
         texto = input_text if input_text else "Ingresa tu nombre..."
         color = (255, 255, 255) if input_text else (150, 150, 150)
         ventana.blit(fuente.render(texto, True, color), (input_rect.x + 10, input_rect.y + 5))
         
-        # Mostrar personajes
+        #Mostrar personajes:
         for i, pj in personajes.items():
             x = 150 + (i-1) * 200
             rect = pygame.Rect(x, 250, 100, 100)
             
-            # Cargar sprite temporal para mostrar
+            #Cargar sprites para la selección de personajes:
             try:
                 sprite = pygame.image.load(pj["path"]).convert_alpha()
                 sprite = pygame.transform.scale(sprite, (80, 80))
@@ -56,40 +62,52 @@ def mostrar_pantalla_personalizacion(ventana):
             # Nombre del personaje
             ventana.blit(fuente.render(pj["nombre"], True, (255, 255, 255)), (x, 350))
         
-        # Botones
+#---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---#
+
+    #---0--- DISEÑO DE BOTONES ---0---#
+    
+        #Continuar:
         pygame.draw.rect(ventana, (0, 200, 100), boton_continuar)
-        ventana.blit(fuente.render("Continuar", True, (255, 255, 255)), (boton_continuar.x + 40, boton_continuar.y + 10))
+        ventana.blit(
+            fuente.render("Continuar", True, (255, 255, 255)),
+            (boton_continuar.x + 40, boton_continuar.y + 10))
         
+        #Volver:
         pygame.draw.rect(ventana, (200, 50, 50), boton_volver)
         ventana.blit(fuente.render("Volver", True, (255, 255, 255)), (boton_volver.x + 20, boton_volver.y + 10))
         
-        # Eventos
+    #---0--- MANEJO DE EVENTOS ---0---#
+    
+        #Eventos:
         for evento in pygame.event.get():
+            
+            #Salir:
             if evento.type == pygame.QUIT:
                 corriendo = False
                 pygame.quit()
                 sys.exit()
             
+            #Sleccion de personajes:
             elif evento.type == pygame.MOUSEBUTTONDOWN:
-                # Selección de personaje
                 for i in personajes:
                     rect = pygame.Rect(150 + (i-1)*200, 250, 100, 100)
                     if rect.collidepoint(evento.pos):
                         personaje_seleccionado = i
-                
-                # Botón continuar
+            
+                #Continuar:
                 if boton_continuar.collidepoint(evento.pos) and input_text.strip():
                     jugador = Jugador(
                         nombre=input_text,
                         personaje_num=personaje_seleccionado,
                         sprite_path=personajes[personaje_seleccionado]["path"]
                     )
+                    
                     # Aquí iría la transición al juego
                     # mostrar_pantalla_juego(ventana, jugador)
                     print(f"Jugador creado: {jugador.nombre} ({jugador.personaje_num})")
                     return
                 
-                # Botón volver
+                #Volver al menú
                 elif boton_volver.collidepoint(evento.pos):
                     return
             
@@ -103,5 +121,6 @@ def mostrar_pantalla_personalizacion(ventana):
         if pygame.mouse.get_pressed()[0]:
             input_activo = input_rect.collidepoint(pygame.mouse.get_pos())
         
+        #Y lo de los FPS:
         pygame.display.update()
         reloj.tick(60)
