@@ -4,6 +4,7 @@ from screens.pantalla_inicio import mostrar_pantalla_inicio
 from screens.pantalla_personalizacion import mostrar_pantalla_personalizacion
 from screens.pantalla_final import mostrar_pantalla_final
 from screens.pantalla_configuracion import mostrar_pantalla_configuracion
+from screens.pantalla_puntajes import mostrar_pantalla_puntajes
 
 #--- TAMAÑOS DE VENTANA ---#
 ANCHO, ALTO = 800, 600 
@@ -91,9 +92,18 @@ def main():
             if musica_activada:
                 cargar_musica()
 
+         #OPCIÓN MEJORES PUNTAJES#
+         elif opcion == "puntajes":
+            mostrar_pantalla_puntajes(VENTANA)
+
          #OPCIÓN SALIR#
          elif opcion == "salir":
             break
+         
+         elif opcion == "test_puntajes":  # Opción oculta para pruebas
+            # Simula un jugador y muestra pantalla final directamente
+            jugador_test = {"nombre": "JugadorPrueba", "personaje": 1}
+            mostrar_pantalla_final(VENTANA, jugador_test["nombre"], 9999, "1:30", True)
 
          # Si volvemos al menú (por defecto), asegurar que la música esté activa
          if musica_activada:

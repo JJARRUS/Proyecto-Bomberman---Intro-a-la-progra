@@ -1,6 +1,20 @@
 from features.imports import *
 from classes.jugador import Jugador
 
+#---0--- OPTENCÓN DE PERSONAJE/PUNTAJES ---0---#
+
+def guardar_puntaje(nombre_jugador, puntaje):
+    """Guarda el nombre y puntaje del jugador en el archivo"""
+    try:       
+        ruta = os.path.join("utilities", "puntajes.txt")
+        
+        # Abre el archivo en modo 'append' (añadir sin borrar lo existente)
+        with open(ruta, "a") as archivo:
+            archivo.write(f"{nombre_jugador},{puntaje}\n")
+        print(f"Puntaje guardado: {nombre_jugador} - {puntaje}")
+    except Exception as e:
+        print(f"Error al guardar: {e}")
+
 #---0--- PANTALLA PERSONALIZACIÓN ---0---#
 
 def mostrar_pantalla_personalizacion(ventana):

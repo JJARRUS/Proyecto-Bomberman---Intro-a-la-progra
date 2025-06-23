@@ -85,15 +85,12 @@ class PantallaInformacion:
         autor = tk.Frame(self.abajo, bg="black")
         autor.pack(pady=5)
         if archivos_foto and os.path.exists(archivos_foto):
-            try:
-                imagen_original = Image.open(archivos_foto)
-                imagen_redimensionada = imagen_original.resize((100, 100), Image.Resampling.LANCZOS) #nueva version
-                imagen_tk = ImageTk.PhotoImage(imagen_redimensionada)
-                imagen_ajustar = tk.Label(autor, image=imagen_tk, bg="black")
-                imagen_ajustar.image = imagen_tk
-                imagen_ajustar.pack(side="left", padx=10)
-            except Exception as e:
-                print(f"Error cargando imagen {archivos_foto}: {e}")
+            imagen_original = Image.open(archivos_foto)
+            imagen_redimensionada = imagen_original.resize((100, 100), Image.Resampling.LANCZOS) #nueva version
+            imagen_tk = ImageTk.PhotoImage(imagen_redimensionada)
+            imagen_ajustar = tk.Label(autor, image=imagen_tk, bg="black")
+            imagen_ajustar.image = imagen_tk
+            imagen_ajustar.pack(side="left", padx=10)
         texto = nombre + "\nCarnet: " + carnet
         tk.Label(autor, text=texto, font=self.fuente, bg="black", fg="white", justify="left").pack(side="left")
 
