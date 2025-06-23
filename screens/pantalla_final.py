@@ -1,4 +1,5 @@
 from features.imports import *
+from screens.pantalla_personalizacion import guardar_puntaje
 
 #---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---#
 
@@ -6,6 +7,10 @@ from features.imports import *
 def mostrar_pantalla_final(ventana, nombre, puntaje, duración, victoria=True):
     reloj = pygame.time.Clock()
     fuente = pygame.font.SysFont("Arial", 32, bold=4)
+    
+    #--- Obtención del puntaje ---#
+    guardar_puntaje(nombre, puntaje)
+    
     
     #--- Mensaje final (Victoria o Derrota) ---#
     mensaje = "¡VICTORIA!" if victoria else "DERROTADO"

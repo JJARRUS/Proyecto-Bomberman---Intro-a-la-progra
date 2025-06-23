@@ -27,6 +27,8 @@ def mostrar_pantalla_inicio(ventana):
 
         #Obtendremos los eventos y los almacenamos#
         for evento in pygame.event.get():
+            if evento.type == pygame.KEYDOWN and evento.key == pygame.K_5:
+                return "test_puntajes"
 
             #Para cerrar el juego:
             if evento.type == pygame.QUIT:
@@ -50,7 +52,7 @@ def mostrar_pantalla_inicio(ventana):
 
                 #---0--- Click sobre "Mejores Puntajes" ---0---#
                 elif boton_puntajes.collidepoint(evento.pos):
-                    print("Mejores Puntajes")
+                    return "puntajes"
 
                 #---0--- Click sobre "Información" ---0---#
                 elif boton_info.collidepoint(evento.pos):
