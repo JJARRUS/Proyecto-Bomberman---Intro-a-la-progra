@@ -45,4 +45,4 @@ class Jugador:
     def mover(self, dx, dy):
         self.x += dx * self.velocidad
         self.y += dy * self.velocidad
-        # Aquí iría la lógica de colisión con el mapa
+        # Aquí iría la lógica de colisión con el mapa   
