@@ -8,7 +8,7 @@ def mostrar_pantalla_inicio(ventana):
     reloj = pygame.time.Clock() #Esto nos ayudara a controlar los FPS
 
     #Ponemos la imagen de fondo:
-    fondo = pygame.image.load("assets/fondos/bomberman_main_menu.jpg")
+    fondo = pygame.image.load("assets/Fondos/bomberman_main_menu.jpg")
     fondo = pygame.transform.scale(fondo, (800, 600))  #Aseguramos que se adapte a la ventana
 
     #Aca estarán los botones:
