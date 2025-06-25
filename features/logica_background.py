@@ -1,3 +1,5 @@
+# logica_background.py
+
 import random
 
 matriz_logica = [
@@ -18,30 +20,22 @@ matriz_logica = [
 
 def posicion_llave_y_puerta(matriz):
     destructibles = []
+    espacios_libres = []
 
     for fila in range(len(matriz)):
         for col in range(len(matriz[0])):
             if matriz[fila][col] == 'D':
                 destructibles.append((fila, col))
+            elif matriz[fila][col] == ' ':
+                espacios_libres.append((fila, col))
 
+    if len(destructibles) < 1 or len(espacios_libres) < 1:
+        raise ValueError("No hay suficientes espacios para colocar llave y puerta.")
 
     fila_llave, col_llave = random.choice(destructibles)
+    fila_puerta, col_puerta = random.choice(espacios_libres)
 
     llave_pos = (col_llave * 32, fila_llave * 32)
     puerta_pos = (col_puerta * 32, fila_puerta * 32)
 
     return llave_pos, puerta_pos, (fila_llave, col_llave)
-
-#Explicacion
-
-"""
-Se importa random para que ubique aleatoriamente una llave y una puerta adentro
-de de la matriz. La matriz esta hecha basada al backgroun.png. I es un bloque
-indestructible y D destructible.
-
-La funcion posicion_llave_y_puerta(matriz) la recorre y guarda las D en una lista
-y las vacias en otra. Escoge un campo destructible random para esconder la llave
-y otro vacio para la puerta.
-Se vuelven en coordenadas al multiplicar las filas y columnas por 32 (tamaño de casilla).
-
-"""

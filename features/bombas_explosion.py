@@ -1,3 +1,5 @@
+# bombas_explosion.py
+
 import pygame
 import os
 
@@ -14,13 +16,20 @@ class Bomba:
         self.tiempo_explota = tiempo_explota
 
         principal = os.path.dirname(__file__)
-        foto_bomba = os.path.join(principal, "..", "assets", "bombas", "imagen_bomba.png")
-        foto_explosion = os.path.join(principal, "..", "assets", "bombas", "imagen_explosion.png")
+        ruta_bomba1 = os.path.join(principal, "..", "assets", "bombas", "imagen_bomba.png")
+        ruta_bomba2 = os.path.join(principal, "..", "assets", "bombas", "imagen_bomba_2.png")
+        ruta_explosion = os.path.join(principal, "..", "assets", "bombas", "imagen_explosion.png")
 
-        self.imagen_bomba = pygame.image.load(foto_bomba)
-        self.imagen_bomba = pygame.transform.scale(self.imagen_bomba, (modificar, modificar))
+        # Animaciones de la bomba (parpadeo)
+        self.bomba_frames = [
+            pygame.transform.scale(pygame.image.load(ruta_bomba1), (modificar, modificar)),
+            pygame.transform.scale(pygame.image.load(ruta_bomba2), (modificar, modificar))
+        ]
+        self.indice_frame = 0
+        self.tiempo_animacion = 150  # ms
+        self.ultimo_frame = pygame.time.get_ticks()
 
-        self.imagen_explosion = pygame.image.load(foto_explosion)
+        self.imagen_explosion = pygame.image.load(ruta_explosion)
         self.imagen_explosion = pygame.transform.scale(self.imagen_explosion, (modificar, modificar))
 
         self.jugador_esta = self.calcular_jugador_esta()
@@ -36,13 +45,19 @@ class Bomba:
 
     def actualizar(self):
         tiempo_actual = pygame.time.get_ticks()
+
         if not self.exploto:
+            if tiempo_actual - self.ultimo_frame >= self.tiempo_animacion:
+                self.indice_frame = (self.indice_frame + 1) % len(self.bomba_frames)
+                self.ultimo_frame = tiempo_actual
+
             if tiempo_actual - self.tiempo_colocada >= self.tiempo:
                 self.exploto = True
                 self.tiempo_explosion = tiempo_actual
         else:
             if tiempo_actual - self.tiempo_explosion >= self.tiempo_explota:
-                return True
+                return True  # Marca la bomba para ser eliminada
+
         return False
 
     def dibujar(self, ventana):
@@ -50,7 +65,7 @@ class Bomba:
             for x, y in self.jugador_esta:
                 ventana.blit(self.imagen_explosion, (x, y))
         else:
-            ventana.blit(self.imagen_bomba, (self.x, self.y))
+            ventana.blit(self.bomba_frames[self.indice_frame], (self.x, self.y))
 
 class Explosivax:
     def __init__(self, max_bombas=3):
@@ -72,26 +87,3 @@ class Explosivax:
     def dibujar(self, ventana):
         for bomba in self.bombas:
             bomba.dibujar(ventana)
-
-#Explicacion
-"""
-La class Bomba recibe una posicion (x,y) y un tiempo donde espera
-antes de que explota (tiempo) y el tiempo sera visible.
-Se cargan dos imagenes, la de la bomba y la de la explosion.
-Con pygame.time.get_ticks() se guarda el momento en que se coloco la bomba
-para de4spues ver cuando se debe explotar.
-
-calcular_jugador_esta deveulve una lista con cinco posiciones (self.x y self.y)
-y arriba, abajo, derecha e izquierda como en el juego bomberman.
-
-En actualizar se ve si ya exploto y si paso el tiempo. Si es asi revisa el tiempo
-de duracion para despues desaparecerla y devolver true.
-
-el dibujo muestra la imegen.
-
-La clase Explosivax maneja las bombas activas y cuanntas hay al mismo tiempo
-Las guarda en una lista. Si no se ha alcanzado el limite entonces puedes
-agregar una bomba. Actualizar recorre las bombas y elimina las que hayan terminado
-su ciclo
-
-"""
