@@ -1,5 +1,3 @@
-# bombas_explosion.py
-
 import pygame
 import os
 
@@ -20,13 +18,12 @@ class Bomba:
         ruta_bomba2 = os.path.join(principal, "..", "assets", "bombas", "imagen_bomba_2.png")
         ruta_explosion = os.path.join(principal, "..", "assets", "bombas", "imagen_explosion.png")
 
-        # Animaciones de la bomba (parpadeo)
         self.bomba_frames = [
             pygame.transform.scale(pygame.image.load(ruta_bomba1), (modificar, modificar)),
             pygame.transform.scale(pygame.image.load(ruta_bomba2), (modificar, modificar))
         ]
         self.indice_frame = 0
-        self.tiempo_animacion = 150  # ms
+        self.tiempo_animacion = 150
         self.ultimo_frame = pygame.time.get_ticks()
 
         self.imagen_explosion = pygame.image.load(ruta_explosion)
@@ -45,19 +42,16 @@ class Bomba:
 
     def actualizar(self):
         tiempo_actual = pygame.time.get_ticks()
-
         if not self.exploto:
             if tiempo_actual - self.ultimo_frame >= self.tiempo_animacion:
                 self.indice_frame = (self.indice_frame + 1) % len(self.bomba_frames)
                 self.ultimo_frame = tiempo_actual
-
             if tiempo_actual - self.tiempo_colocada >= self.tiempo:
                 self.exploto = True
                 self.tiempo_explosion = tiempo_actual
         else:
             if tiempo_actual - self.tiempo_explosion >= self.tiempo_explota:
-                return True  # Marca la bomba para ser eliminada
-
+                return True
         return False
 
     def dibujar(self, ventana):
@@ -72,10 +66,13 @@ class Explosivax:
         self.bombas = []
         self.max_bombas = max_bombas
 
-    def colocar_bomba(self, x, y):
+    def colocar_bomba(self, x, y, jugador=None):
         if len(self.bombas) < self.max_bombas:
-            bomba = Bomba(x, y)
-            self.bombas.append(bomba)
+            if jugador is None or jugador.puede_colocar_bomba():
+                bomba = Bomba(x, y)
+                self.bombas.append(bomba)
+                if jugador:
+                    jugador.usar_bomba()
 
     def actualizar(self):
         bombas_activas = []

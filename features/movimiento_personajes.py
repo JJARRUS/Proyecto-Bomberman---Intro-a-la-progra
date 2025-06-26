@@ -1,5 +1,3 @@
-# movimiento_personaje.py
-
 import pygame
 import os
 
@@ -11,7 +9,9 @@ class Jugador(pygame.sprite.Sprite):
         self.personaje_num = personaje_num
         self.direccion = 'parado'
         self.velocidad = 4
-        self.matriz = matriz_juego  # Ahora usa matriz dinámica
+        self.matriz = matriz_juego
+        self.bombas_disponibles = 8
+        
         carpeta_personaje = ''
         nombre_base = ''
         if personaje_num == 1:
@@ -23,6 +23,7 @@ class Jugador(pygame.sprite.Sprite):
         elif personaje_num == 3:
             carpeta_personaje = 'PJ3'
             nombre_base = 'chosen'
+
         ruta_base = os.path.join('assets', 'personajes', carpeta_personaje)
         self.imagenes = {
             'arriba': pygame.transform.scale(pygame.image.load(os.path.join(ruta_base, nombre_base + '_arriba.png')), (28, 28)),
@@ -68,6 +69,7 @@ class Jugador(pygame.sprite.Sprite):
             self.direccion = 'derecha'
         else:
             self.direccion = 'parado'
+
         if self.mover(dx, dy):
             self.rect.x += dx * self.velocidad
             self.rect.y += dy * self.velocidad
@@ -91,6 +93,13 @@ class Jugador(pygame.sprite.Sprite):
             x_bomba = (x_bomba // tamaño) * tamaño
             y_bomba = (y_bomba // tamaño) * tamaño
         return x_bomba, y_bomba
+
+    def puede_colocar_bomba(self):
+        return self.bombas_disponibles > 0
+
+    def usar_bomba(self):
+        if self.bombas_disponibles > 0:
+            self.bombas_disponibles -= 1
 
     def dibujar(self, ventana):
         ventana.blit(self.foto, self.rect)
