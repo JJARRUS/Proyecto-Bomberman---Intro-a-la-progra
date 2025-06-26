@@ -50,3 +50,32 @@ class BloqueHielo:
             if pygame.time.get_ticks() - self.tiempo_afectado > 3000:
                 jugador.velocidad = self.velocidad_original
                 self.afectando = False
+
+
+class Oscuridad:
+    def __init__(self, jugador, matriz, ancho, alto):
+        self.jugador = jugador
+        self.matriz = matriz
+        self.ancho = ancho
+        self.alto = alto
+        self.radio = 64  # zona visible alrededor del jugador
+        self.superficie = pygame.Surface((self.ancho, self.alto), pygame.SRCALPHA)
+        self.bordes = self.obtener_bordes()
+
+    def obtener_bordes(self):
+        posiciones = []
+        for fila in range(len(self.matriz)):
+            for col in range(len(self.matriz[0])):
+                if fila in [0, len(self.matriz)-1] or col in [0, len(self.matriz[0])-1]:
+                    posiciones.append((col * TAM_CASILLA, fila * TAM_CASILLA))
+        return posiciones
+
+    def dibujar(self, ventana):
+        self.superficie.fill((0, 0, 0, 220))
+        for borde in self.bordes:
+            pygame.draw.rect(self.superficie, (0, 0, 0, 0), (borde[0], borde[1], TAM_CASILLA, TAM_CASILLA))
+
+        centro_x = self.jugador.rect.centerx
+        centro_y = self.jugador.rect.centery
+        pygame.draw.circle(self.superficie, (0, 0, 0, 0), (centro_x, centro_y), self.radio)
+        ventana.blit(self.superficie, (0, 0))

@@ -7,7 +7,7 @@ from features.vida_jugador import Vida
 from features.llave_puerta import Llave, Puerta
 from features.movimiento_personajes import Jugador
 from features.bombas_explosion import Explosivax
-from features.ambientacion import BloqueHielo
+from features.ambientacion import BloqueHielo, Oscuridad
 from features.items_powerups import ItemPowerUpManager
 
 ancho = 416
@@ -50,7 +50,8 @@ def jugar_nivel(ventana, nivel, vida):
     jugador.escudo_timer = 0
 
     explosivos = Explosivax(max_bombas=3)
-    bloques_hielo = BloqueHielo(matriz_juego)
+    bloques_hielo = BloqueHielo(matriz_juego) if nivel == 1 else None
+    oscuridad = Oscuridad(jugador, matriz_juego, ancho, alto) if nivel == 2 else None
     items_manager = ItemPowerUpManager(matriz_juego)
 
     texto_nivel(ventana, nivel)
@@ -80,7 +81,8 @@ def jugar_nivel(ventana, nivel, vida):
         jugador.movimiento(teclas)
         jugador.actualizar_estado()
         explosivos.actualizar()
-        bloques_hielo.aplicar_efecto(jugador)
+        if bloques_hielo:
+            bloques_hielo.aplicar_efecto(jugador)
         items_manager.actualizar(jugador, vida)
 
         if items_manager.recogio_powerup_vida:
@@ -121,7 +123,8 @@ def jugar_nivel(ventana, nivel, vida):
 
         ventana.fill((0, 0, 0))
         dibujar_background(ventana, matriz_juego)
-        bloques_hielo.dibujar(ventana)
+        if bloques_hielo:
+            bloques_hielo.dibujar(ventana)
         items_manager.dibujar(ventana)
 
         if not tiene_llave and not llave.recogida:
@@ -130,6 +133,9 @@ def jugar_nivel(ventana, nivel, vida):
         puerta.dibujar(ventana)
         explosivos.dibujar(ventana)
         jugador.dibujar(ventana)
+
+        if oscuridad:
+            oscuridad.dibujar(ventana)
 
         pygame.draw.rect(ventana, (30, 30, 30), (0, alto - HUD_HEIGHT, ancho, HUD_HEIGHT))
         vida.visual(ventana, pos_x=10, pos_y=alto - 40)
