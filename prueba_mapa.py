@@ -2,7 +2,7 @@ import pygame
 import sys
 import os
 from features.background import dibujar_background
-from features.logica_background import matriz_logica as matriz, posicion_llave_y_puerta
+from features.logica_background import obtener_matriz_y_posiciones
 from features.vida_jugador import Vida
 from features.llave_puerta import Llave, Puerta
 from features.movimiento_personajes import Jugador
@@ -32,18 +32,8 @@ def texto_nivel(ventana, nivel):
     pygame.display.flip()
     pygame.time.delay(3000)
 
-def main():
-    pygame.init()
-    ventana = pygame.display.set_mode((ancho, alto))
-    pygame.display.set_caption("Prueba del mapa")
-    reloj = pygame.time.Clock()
-
-    fuente_chica = pygame.font.SysFont("fixedsys", 20)
-    tiempo_inicio = pygame.time.get_ticks()
-
-    vida = Vida(cantidad_vida=3)
-    matriz_juego = [fila.copy() for fila in matriz]
-    pos_llave, pos_puerta, pos_matriz_llave = posicion_llave_y_puerta(matriz_juego)
+def jugar_nivel(ventana, nivel, vida):
+    matriz_juego, pos_llave, pos_puerta, pos_matriz_llave = obtener_matriz_y_posiciones(nivel)
     fila_llave, col_llave = pos_matriz_llave
 
     llave = Llave(pos_llave[0], pos_llave[1])
@@ -63,15 +53,19 @@ def main():
     bloques_hielo = BloqueHielo(matriz_juego)
     items_manager = ItemPowerUpManager(matriz_juego)
 
-    texto_nivel(ventana, 1)
+    texto_nivel(ventana, nivel)
 
+    fuente_chica = pygame.font.SysFont("fixedsys", 20)
+    tiempo_inicio = pygame.time.get_ticks()
+    reloj = pygame.time.Clock()
     bombas_dañando = set()
     corriendo = True
 
     while corriendo:
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
-                corriendo = False
+                pygame.quit()
+                sys.exit()
             elif evento.type == pygame.KEYDOWN:
                 if evento.key == pygame.K_x:
                     x_bomba, y_bomba = jugador.obtener_posicion_bomba()
@@ -80,7 +74,7 @@ def main():
                     indice = evento.key - pygame.K_1
                     if indice < len(jugador.items):
                         tipo = jugador.items[indice]
-                        items_manager.usar_item(jugador, tipo)
+                        jugador.usar_item(tipo)
 
         teclas = pygame.key.get_pressed()
         jugador.movimiento(teclas)
@@ -99,7 +93,6 @@ def main():
                     if destruir_bloque(matriz_juego, x_bloq, y_bloq):
                         if (x_bloq, y_bloq) == (col_llave * TAM_CASILLA, fila_llave * TAM_CASILLA):
                             llave.visible = True
-
                 if bomba not in bombas_dañando:
                     jugador_centro = pygame.Rect(jugador.rect.centerx, jugador.rect.centery, 1, 1)
                     for x_exp, y_exp in coords:
@@ -124,7 +117,8 @@ def main():
             llave.recogida = True
 
         if jugador.rect.colliderect(pygame.Rect(puerta.x, puerta.y, TAM_CASILLA, TAM_CASILLA)) and tiene_llave:
-            corriendo = False
+            return True  # Nivel completado
+
         ventana.fill((0, 0, 0))
         dibujar_background(ventana, matriz_juego)
         bloques_hielo.dibujar(ventana)
@@ -139,21 +133,35 @@ def main():
 
         pygame.draw.rect(ventana, (30, 30, 30), (0, alto - HUD_HEIGHT, ancho, HUD_HEIGHT))
         vida.visual(ventana, pos_x=10, pos_y=alto - 40)
-
         if tiene_llave:
             llave.dibujar_llave(ventana)
 
         tiempo_actual = (pygame.time.get_ticks() - tiempo_inicio) // 1000
         texto_tiempo = fuente_chica.render("Tiempo: " + str(tiempo_actual) + "s", True, (255, 255, 255))
         ventana.blit(texto_tiempo, (310, alto - 35))
-
         texto_bombas = fuente_chica.render("Bombas: " + str(jugador.bombas_disponibles), True, (255, 255, 255))
         ventana.blit(texto_bombas, (200, alto - 35))
 
         items_manager.mostrar_items_superiores(ventana, jugador, fuente_chica, alto)
-
         pygame.display.flip()
         reloj.tick(60)
+
+    return False
+
+def main():
+    pygame.init()
+    ventana = pygame.display.set_mode((ancho, alto))
+    pygame.display.set_caption("Prueba del mapa")
+    vida = Vida(cantidad_vida=3)
+
+    nivel_actual = 1
+    total_niveles = 4
+
+    while nivel_actual <= total_niveles:
+        completado = jugar_nivel(ventana, nivel_actual, vida)
+        if not completado:
+            break
+        nivel_actual += 1
 
     pygame.quit()
     sys.exit()
