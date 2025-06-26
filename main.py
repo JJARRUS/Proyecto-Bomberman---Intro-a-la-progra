@@ -50,7 +50,6 @@ def main():
 
             # Si se creó un jugador (y no se presionó volver):
             if jugador_actual:
-               from screens.pantalla_juego import mostrar_pantalla_juego
                mostrar_pantalla_juego(VENTANA, jugador_actual)
                jugador_actual = None
                 

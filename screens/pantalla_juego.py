@@ -8,6 +8,7 @@ from features.movimiento_personajes import Jugador
 from features.bombas_explosion import Explosivax
 from features.ambientacion import BloqueHielo
 from features.enemigos import Enemigo
+from features.monedas import Moneda
 from screens.pantalla_final import mostrar_pantalla_final
 
 ancho = 416
@@ -55,6 +56,8 @@ def mostrar_pantalla_juego(ventana, jugador_objeto):
 
     explosivos = Explosivax(max_bombas=3)
     bloques_hielo = BloqueHielo(matriz_juego)
+    monedas = Moneda(matriz_juego)
+    print("Monedas generadas:", len(monedas.posiciones))
 
     enemigos = [
         Enemigo(160, 160),
@@ -124,6 +127,8 @@ def mostrar_pantalla_juego(ventana, jugador_objeto):
             if not b.exploto or pygame.time.get_ticks() - b.tiempo_explosion < b.tiempo_explota
         ]
 
+        puntos += monedas.recoger(jugador.rect)
+
         if not tiene_llave and not llave.recogida and llave.visible and jugador.rect.colliderect(pygame.Rect(llave.x, llave.y, TAM_CASILLA, TAM_CASILLA)):
             tiene_llave = True
             llave.recogida = True
@@ -148,6 +153,7 @@ def mostrar_pantalla_juego(ventana, jugador_objeto):
         ventana.fill((0, 0, 0))
         dibujar_background(ventana, matriz_juego)
         bloques_hielo.dibujar(ventana)
+        monedas.dibujar(ventana)
 
         for enemigo in enemigos:
             enemigo.dibujar(ventana)
