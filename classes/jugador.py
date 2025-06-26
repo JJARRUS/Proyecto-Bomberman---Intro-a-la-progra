@@ -1,54 +1,115 @@
-from features.imports import *
+import pygame
+import os
 
-class Jugador:
-    def __init__(self, nombre, personaje_num, sprite_path):
-        self.nombre = nombre
+tamaño = 32
+
+class Jugador(pygame.sprite.Sprite):
+    def __init__(self, x, y, personaje_num, matriz_juego):
+        super().__init__()
         self.personaje_num = personaje_num
-        self.sprite = self.cargar_sprite(sprite_path)
-        self.x = 0  
-        self.y = 0
-        self.vidas = 3
-        self.bombas_disponibles = 5  
-        self.velocidad = 5
+        self.direccion = 'parado'
+        self.velocidad = 4
+        self.matriz = matriz_juego
+        self.bombas_disponibles = 8
+        self.items = []  
+        self.daño_bomba = 1 
+        self.escudo_activo = False
+        self.tiempo_velocidad = 0
+        self.tiempo_escudo = 0
+        self.vida_objeto = None  
+        carpeta_personaje = ''
+        nombre_base = ''
+        if personaje_num == 1:
+            carpeta_personaje = 'PJ1'
+            nombre_base = 'bomberman'
+        elif personaje_num == 2:
+            carpeta_personaje = 'PJ2'
+            nombre_base = 'bombgirl'
+        elif personaje_num == 3:
+            carpeta_personaje = 'PJ3'
+            nombre_base = 'chosen'
 
-        self.configurar_personaje()
+        ruta_base = os.path.join('assets', 'personajes', carpeta_personaje)
+        self.imagenes = {
+            'arriba': pygame.transform.scale(pygame.image.load(os.path.join(ruta_base, nombre_base + '_arriba.png')), (28, 28)),
+            'abajo': pygame.transform.scale(pygame.image.load(os.path.join(ruta_base, nombre_base + '_abajo.png')), (28, 28)),
+            'izquierda': pygame.transform.scale(pygame.image.load(os.path.join(ruta_base, nombre_base + '_izquierda.png')), (28, 28)),
+            'derecha': pygame.transform.scale(pygame.image.load(os.path.join(ruta_base, nombre_base + '_derecha.png')), (28, 28)),
+            'parado': pygame.transform.scale(pygame.image.load(os.path.join(ruta_base, nombre_base + '_parado.png')), (28, 28))
+        }
 
-    def cargar_sprite(self, path):
-        try:
-            sprite = pygame.image.load(path).convert_alpha()
-            return pygame.transform.scale(sprite, (64, 64))
-        except:
-            sprite = pygame.Surface((64, 64))
-            colores = [(255, 255, 255), (255, 100, 100), (100, 100, 255)][self.personaje_num - 1]
-            sprite.fill(colores)
-            return sprite
+        self.foto = self.imagenes[self.direccion]
+        self.rect = self.foto.get_rect()
+        self.rect.topleft = (x, y)
 
-    def configurar_personaje(self):
-        if self.personaje_num == 1:  # Bombman
-            self.daño_bomba = 2
-            self.rango_bomba = 2
-        elif self.personaje_num == 2:  # Bombgirl
-            self.daño_bomba = 1
-            self.rango_bomba = 3
-            self.velocidad = 6
-        elif self.personaje_num == 3:  # The Chosen One
-            self.daño_bomba = 3
-            self.rango_bomba = 1
-            self.vidas = 4
+    def mover(self, dx, dy):
+        nuevo_rect = self.rect.move(dx * self.velocidad, dy * self.velocidad)
+        for punto in [
+            (nuevo_rect.left, nuevo_rect.top),
+            (nuevo_rect.right - 1, nuevo_rect.top),
+            (nuevo_rect.left, nuevo_rect.bottom - 1),
+            (nuevo_rect.right - 1, nuevo_rect.bottom - 1),
+        ]:
+            fila = punto[1] // tamaño
+            col = punto[0] // tamaño
+            if fila < 0 or col < 0 or fila >= len(self.matriz) or col >= len(self.matriz[0]):
+                return False
+            if self.matriz[fila][col] in ('I', 'D'):
+                return False
+        return True
+
+    def movimiento(self, teclas):
+        dx = dy = 0
+        if teclas[pygame.K_w]:
+            dy = -1
+            self.direccion = 'arriba'
+        elif teclas[pygame.K_s]:
+            dy = 1
+            self.direccion = 'abajo'
+        elif teclas[pygame.K_a]:
+            dx = -1
+            self.direccion = 'izquierda'
+        elif teclas[pygame.K_d]:
+            dx = 1
+            self.direccion = 'derecha'
+        else:
+            self.direccion = 'parado'
+
+        if self.mover(dx, dy):
+            self.rect.x += dx * self.velocidad
+            self.rect.y += dy * self.velocidad
+        self.foto = self.imagenes[self.direccion]
+
+    def obtener_posicion_bomba(self):
+        x_bomba = (self.rect.centerx // tamaño) * tamaño
+        y_bomba = (self.rect.centery // tamaño) * tamaño
+        return x_bomba, y_bomba
 
     def puede_colocar_bomba(self):
         return self.bombas_disponibles > 0
 
     def usar_bomba(self):
-        if self.puede_colocar_bomba():
+        if self.bombas_disponibles > 0:
             self.bombas_disponibles -= 1
 
-    def recuperar_bomba(self):
-        self.bombas_disponibles += 1
+    def usar_item(self, tipo):
+        if tipo in self.items:
+            self.items.remove(tipo)
+            if tipo == "bomba":
+                self.bombas_disponibles += 1
+            elif tipo == "velocidad":
+                self.velocidad += 2
+                self.tiempo_velocidad = pygame.time.get_ticks()
+            elif tipo == "escudo":
+                self.escudo_activo = True
+                self.tiempo_escudo = pygame.time.get_ticks()
+
+    def actualizar_estado(self):
+        tiempo = pygame.time.get_ticks()
+        if self.velocidad > 4 and tiempo - self.tiempo_velocidad > 10000:
+            self.velocidad = 4
+        if self.escudo_activo and tiempo - self.tiempo_escudo > 10000:
+            self.escudo_activo = False
 
     def dibujar(self, ventana):
-        ventana.blit(self.sprite, (self.x, self.y))
-
-    def mover(self, dx, dy):
-        self.x += dx * self.velocidad
-        self.y += dy * self.velocidad
+        ventana.blit(self.foto, self.rect)

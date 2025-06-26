@@ -9,9 +9,14 @@ class Jugador(pygame.sprite.Sprite):
         self.personaje_num = personaje_num
         self.direccion = 'parado'
         self.velocidad = 4
+        self.velocidad_base = 4
         self.matriz = matriz_juego
-        self.bombas_disponibles = 8
-        
+        self.bombas_disponibles = 5
+        self.items = []  
+        self.tiene_escudo = False
+        self.tiempo_escudo = 0
+        self.tiempo_velocidad = 0
+
         carpeta_personaje = ''
         nombre_base = ''
         if personaje_num == 1:
@@ -100,6 +105,27 @@ class Jugador(pygame.sprite.Sprite):
     def usar_bomba(self):
         if self.bombas_disponibles > 0:
             self.bombas_disponibles -= 1
+
+    def usar_item(self, tipo):
+        if tipo in self.items:
+            if tipo == 'bomba':
+                self.bombas_disponibles += 1
+            elif tipo == 'velocidad':
+                self.velocidad = self.velocidad_base + 2
+                self.tiempo_velocidad = pygame.time.get_ticks()
+            elif tipo == 'escudo':
+                self.tiene_escudo = True
+                self.tiempo_escudo = pygame.time.get_ticks()
+            self.items.remove(tipo)  
+
+    def actualizar_estado(self):
+        tiempo_actual = pygame.time.get_ticks()
+        if self.tiempo_velocidad and tiempo_actual - self.tiempo_velocidad >= 60000:
+            self.velocidad = self.velocidad_base
+            self.tiempo_velocidad = 0
+        if self.tiempo_escudo and tiempo_actual - self.tiempo_escudo >= 60000:
+            self.tiene_escudo = False
+            self.tiempo_escudo = 0
 
     def dibujar(self, ventana):
         ventana.blit(self.foto, self.rect)

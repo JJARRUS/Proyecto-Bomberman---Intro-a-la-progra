@@ -1,12 +1,15 @@
 import pygame
 import sys
+import os
 from features.background import dibujar_background
 from features.logica_background import matriz_logica as matriz, posicion_llave_y_puerta
 from features.vida_jugador import Vida
 from features.llave_puerta import Llave, Puerta
 from features.movimiento_personajes import Jugador
 from features.bombas_explosion import Explosivax
-from features.ambientacion import BloqueHielo  
+from features.ambientacion import BloqueHielo
+from features.items_powerups import ItemPowerUpManager
+
 ancho = 416
 alto = 480 + 50
 TAM_CASILLA = 32
@@ -48,8 +51,17 @@ def main():
     tiene_llave = False
 
     jugador = Jugador(TAM_CASILLA, TAM_CASILLA, personaje_num=1, matriz_juego=matriz_juego)
+    jugador.vida_objeto = vida
+    jugador.items = []
+    jugador.daño_bomba = 2
+    jugador.tiene_escudo = False
+    jugador.velocidad_original = jugador.velocidad
+    jugador.velocidad_timer = 0
+    jugador.escudo_timer = 0
+
     explosivos = Explosivax(max_bombas=3)
     bloques_hielo = BloqueHielo(matriz_juego)
+    items_manager = ItemPowerUpManager(matriz_juego)
 
     texto_nivel(ventana, 1)
 
@@ -64,11 +76,21 @@ def main():
                 if evento.key == pygame.K_x:
                     x_bomba, y_bomba = jugador.obtener_posicion_bomba()
                     explosivos.colocar_bomba(x_bomba, y_bomba, jugador=jugador)
+                elif evento.key in [pygame.K_1, pygame.K_2, pygame.K_3]:
+                    indice = evento.key - pygame.K_1
+                    if indice < len(jugador.items):
+                        tipo = jugador.items[indice]
+                        items_manager.usar_item(jugador, tipo)
 
         teclas = pygame.key.get_pressed()
         jugador.movimiento(teclas)
+        jugador.actualizar_estado()
         explosivos.actualizar()
         bloques_hielo.aplicar_efecto(jugador)
+        items_manager.actualizar(jugador, vida)
+
+        if items_manager.recogio_powerup_vida:
+            items_manager.recogio_powerup_vida = False
 
         for bomba in explosivos.bombas:
             if bomba.exploto:
@@ -83,7 +105,12 @@ def main():
                     for x_exp, y_exp in coords:
                         rect_exp = pygame.Rect(x_exp, y_exp, TAM_CASILLA, TAM_CASILLA)
                         if rect_exp.colliderect(jugador_centro):
-                            vida.perder_corazones()
+                            if jugador.tiene_escudo:
+                                jugador.tiene_escudo = False
+                            elif vida.powerup_activo:
+                                vida.powerup_activo = False
+                            else:
+                                vida.perder_corazones()
                             bombas_dañando.add(bomba)
                             break
 
@@ -96,16 +123,15 @@ def main():
             tiene_llave = True
             llave.recogida = True
 
-        if jugador.rect.colliderect(pygame.Rect(puerta.x, puerta.y, TAM_CASILLA, TAM_CASILLA)):
-            if tiene_llave:
-                corriendo = False
+        if jugador.rect.colliderect(pygame.Rect(puerta.x, puerta.y, TAM_CASILLA, TAM_CASILLA)) and tiene_llave:
+            corriendo = False
         ventana.fill((0, 0, 0))
         dibujar_background(ventana, matriz_juego)
         bloques_hielo.dibujar(ventana)
+        items_manager.dibujar(ventana)
 
         if not tiene_llave and not llave.recogida:
             llave.dibujar(ventana)
-
         puerta.activa = True
         puerta.dibujar(ventana)
         explosivos.dibujar(ventana)
@@ -116,11 +142,15 @@ def main():
 
         if tiene_llave:
             llave.dibujar_llave(ventana)
+
         tiempo_actual = (pygame.time.get_ticks() - tiempo_inicio) // 1000
-        texto_tiempo = fuente_chica.render(f"Tiempo: {tiempo_actual}s", True, (255, 255, 255))
+        texto_tiempo = fuente_chica.render("Tiempo: " + str(tiempo_actual) + "s", True, (255, 255, 255))
         ventana.blit(texto_tiempo, (310, alto - 35))
-        texto_bombas = fuente_chica.render(f"Bombas: {jugador.bombas_disponibles}", True, (255, 255, 255))
+
+        texto_bombas = fuente_chica.render("Bombas: " + str(jugador.bombas_disponibles), True, (255, 255, 255))
         ventana.blit(texto_bombas, (200, alto - 35))
+
+        items_manager.mostrar_items_superiores(ventana, jugador, fuente_chica, alto)
 
         pygame.display.flip()
         reloj.tick(60)
