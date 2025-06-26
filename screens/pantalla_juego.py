@@ -43,6 +43,8 @@ def mostrar_pantalla_juego(ventana, jugador_objeto):
     matriz_juego = [fila.copy() for fila in matriz]
     pos_llave, pos_puerta, pos_matriz_llave = posicion_llave_y_puerta(matriz_juego)
     fila_llave, col_llave = pos_matriz_llave
+    fila_puerta, col_puerta = pos_puerta[1] // TAM_CASILLA, pos_puerta[0] // TAM_CASILLA
+    puerta_visible = False
 
     llave = Llave(pos_llave[0], pos_llave[1])
     puerta = Puerta(pos_puerta[0], pos_puerta[1])
@@ -105,6 +107,8 @@ def mostrar_pantalla_juego(ventana, jugador_objeto):
                     if destruir_bloque(matriz_juego, x_bloq, y_bloq):
                         if (x_bloq, y_bloq) == (col_llave * TAM_CASILLA, fila_llave * TAM_CASILLA):
                             llave.visible = True
+                        if (x_bloq, y_bloq) == (col_puerta * TAM_CASILLA, fila_puerta * TAM_CASILLA):
+                            puerta_visible = True
 
                 if bomba not in bombas_dañando:
                     jugador_centro = pygame.Rect(jugador.rect.centerx, jugador.rect.centery, 1, 1)
@@ -124,7 +128,7 @@ def mostrar_pantalla_juego(ventana, jugador_objeto):
             tiene_llave = True
             llave.recogida = True
 
-        if jugador.rect.colliderect(pygame.Rect(puerta.x, puerta.y, TAM_CASILLA, TAM_CASILLA)):
+        if puerta_visible and jugador.rect.colliderect(pygame.Rect(puerta.x, puerta.y, TAM_CASILLA, TAM_CASILLA)):
             if tiene_llave:
                 duracion = (pygame.time.get_ticks() - tiempo_inicio) // 1000
                 minutos = duracion // 60
@@ -151,8 +155,10 @@ def mostrar_pantalla_juego(ventana, jugador_objeto):
         if not tiene_llave and not llave.recogida:
             llave.dibujar(ventana)
 
-        puerta.activa = True
-        puerta.dibujar(ventana)
+        if puerta_visible:
+            puerta.activa = True
+            puerta.dibujar(ventana)
+
         explosivos.dibujar(ventana)
         jugador.dibujar(ventana)
 

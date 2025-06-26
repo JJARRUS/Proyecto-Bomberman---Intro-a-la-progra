@@ -31,7 +31,7 @@ def posicion_llave_y_puerta(matriz):
         raise ValueError("No hay suficientes espacios para colocar llave y puerta.")
 
     fila_llave, col_llave = random.choice(destructibles)
-    fila_puerta, col_puerta = random.choice(espacios_libres)
+    fila_puerta, col_puerta = random.choice([pos for pos in destructibles if (fila_llave, col_llave) != pos])
 
     llave_pos = (col_llave * 32, fila_llave * 32)
     puerta_pos = (col_puerta * 32, fila_puerta * 32)
