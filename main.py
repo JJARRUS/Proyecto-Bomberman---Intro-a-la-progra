@@ -1,10 +1,12 @@
 from features.imports import *
 from features.config import cargar_musica, musica_activada
+
 from screens.pantalla_inicio import mostrar_pantalla_inicio
 from screens.pantalla_personalizacion import mostrar_pantalla_personalizacion
 from screens.pantalla_final import mostrar_pantalla_final
 from screens.pantalla_configuracion import mostrar_pantalla_configuracion
 from screens.pantalla_puntajes import mostrar_pantalla_puntajes
+from screens.pantalla_juego import mostrar_pantalla_juego
 
 #--- TAMAÑOS DE VENTANA ---#
 ANCHO, ALTO = 800, 600 
@@ -47,16 +49,11 @@ def main():
             jugador_actual = mostrar_pantalla_personalizacion(VENTANA)
 
             # Si se creó un jugador (y no se presionó volver):
-            if jugador_actual:  
-
-               # TODO: Simulación del juego (esto se reemplazará con pantalla_juego)
-               print(f"Jugador creado: {jugador_actual['nombre']}")
-
-               # Simulación de juego terminado (mostrar pantalla final)
-               resultado_final = mostrar_pantalla_final(VENTANA, jugador_actual['nombre'], 1500, "3:45", True)
-               if resultado_final == "salir":
-                  break
-
+            if jugador_actual:
+               from screens.pantalla_juego import mostrar_pantalla_juego
+               mostrar_pantalla_juego(VENTANA, jugador_actual)
+               jugador_actual = None
+                
          #--- OPCIÓN CONFIGURACIÓN ---#
          elif opcion == "configuracion":
             # Cerrar la ventana de pygame temporalmente

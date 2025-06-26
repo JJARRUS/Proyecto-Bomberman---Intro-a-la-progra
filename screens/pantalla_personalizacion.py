@@ -101,7 +101,7 @@ def mostrar_pantalla_personalizacion(ventana):
                 pygame.quit()
                 sys.exit()
             
-            #Sleccion de personajes:
+            #Seleccion de personajes:
             elif evento.type == pygame.MOUSEBUTTONDOWN:
                 for i in personajes:
                     rect = pygame.Rect(150 + (i-1)*200, 250, 100, 100)
@@ -115,15 +115,13 @@ def mostrar_pantalla_personalizacion(ventana):
                         personaje_num=personaje_seleccionado,
                         sprite_path=personajes[personaje_seleccionado]["path"]
                     )
-                    
-                    # Aquí iría la transición al juego
-                    # mostrar_pantalla_juego(ventana, jugador)
-                    print(f"Jugador creado: {jugador.nombre} ({jugador.personaje_num})")
-                    return
+                   
+                    # Devolver información del jugador al main
+                    return jugador
                 
                 #Volver al menú
                 elif boton_volver.collidepoint(evento.pos):
-                    return
+                    return None
             
             elif evento.type == pygame.KEYDOWN and input_activo:
                 if evento.key == pygame.K_BACKSPACE:

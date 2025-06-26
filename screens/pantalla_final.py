@@ -1,15 +1,15 @@
 from features.imports import *
-from screens.pantalla_personalizacion import guardar_puntaje
+from features.utilidades import guardar_puntaje
 
 #---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---0---#
 
 #Función de la pantalla final:
-def mostrar_pantalla_final(ventana, nombre, puntaje, duración, victoria=True):
+def mostrar_pantalla_final(ventana, nombre, puntos, duración, victoria=True):
     reloj = pygame.time.Clock()
     fuente = pygame.font.SysFont("Arial", 32, bold=4)
     
     #--- Obtención del puntaje ---#
-    guardar_puntaje(nombre, puntaje)
+    guardar_puntaje(nombre, puntos)
     
     
     #--- Mensaje final (Victoria o Derrota) ---#
@@ -33,7 +33,7 @@ def mostrar_pantalla_final(ventana, nombre, puntaje, duración, victoria=True):
         #Obtenemos la información del usuario:
         info_user = [
             f"Nombre: {nombre}",
-            f"Puntaje: {puntaje}",
+            f"Puntaje: {puntos}",
             f"Duración: {duración}"
         ]
         
