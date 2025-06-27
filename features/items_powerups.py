@@ -39,17 +39,15 @@ class ItemPowerUpManager:
             while destructibles:
                 col, fila = destructibles.pop()
                 x, y = col * TAM, fila * TAM
-                # evitar puerta y llave
-                if self.matriz[fila][col] == 'D':
-                    ocupado = any(obj['x'] == x and obj['y'] == y for obj in colocados)
-                    if not ocupado:
-                        nuevo = {'tipo': tipo, 'x': x, 'y': y, 'activo': False}
-                        colocados.append(nuevo)
-                        if tipo in ['bomba', 'velocidad', 'escudo']:
-                            self.items.append(nuevo)
-                        else:
-                            self.powerups.append(nuevo)
-                        break
+                ocupado = any(obj['x'] == x and obj['y'] == y for obj in colocados)
+                if not ocupado:
+                    nuevo = {'tipo': tipo, 'x': x, 'y': y, 'activo': False}
+                    colocados.append(nuevo)
+                    if tipo in ['bomba', 'velocidad', 'escudo']:
+                        self.items.append(nuevo)
+                    else:
+                        self.powerups.append(nuevo)
+                    break
 
     def liberar_objeto(self, col, fila):
         x, y = col * TAM, fila * TAM

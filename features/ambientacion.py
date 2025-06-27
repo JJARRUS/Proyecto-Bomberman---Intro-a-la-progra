@@ -1,5 +1,3 @@
-# ambientacion.py
-
 import pygame
 import random
 import os
@@ -15,7 +13,7 @@ class BloqueHielo:
         self.velocidad_original = None
 
     def cargar_imagen(self):
-        ruta = os.path.join(os.path.dirname(__file__), "..", "assets", "Ambientacion", "hielo.png")
+        ruta = os.path.join("assets", "Ambientacion", "hielo.png")
         imagen = pygame.image.load(ruta)
         return pygame.transform.scale(imagen, (TAM_CASILLA, TAM_CASILLA))
 
@@ -50,3 +48,95 @@ class BloqueHielo:
             if pygame.time.get_ticks() - self.tiempo_afectado > 3000:
                 jugador.velocidad = self.velocidad_original
                 self.afectando = False
+
+class Oscuridad:
+    def __init__(self, jugador, matriz, ancho, alto):
+        self.jugador = jugador
+        self.superficie = pygame.Surface((ancho, alto), pygame.SRCALPHA)
+        self.radio = 100
+        self.matriz = matriz
+
+    def dibujar(self, ventana):
+        self.superficie.fill((0, 0, 0, 200))
+        centro_x = self.jugador.rect.centerx
+        centro_y = self.jugador.rect.centery
+        pygame.draw.circle(self.superficie, (0, 0, 0, 0), (centro_x, centro_y), self.radio)
+        ventana.blit(self.superficie, (0, 0))
+
+class Mina:
+    def __init__(self, matriz_juego, cantidad=2):
+        self.imagen = self.cargar_imagen()
+        self.posiciones = self.generar_posiciones(matriz_juego, cantidad)
+        self.detonadas = set()
+
+    def cargar_imagen(self):
+        ruta = os.path.join("assets", "Ambientacion", "mina.png")
+        imagen = pygame.image.load(ruta)
+        return pygame.transform.scale(imagen, (TAM_CASILLA, TAM_CASILLA))
+
+    def generar_posiciones(self, matriz, cantidad):
+        vacios = []
+        for fila in range(len(matriz)):
+            for col in range(len(matriz[0])):
+                if matriz[fila][col] == " ":
+                    vacios.append((col * TAM_CASILLA, fila * TAM_CASILLA))
+        return random.sample(vacios, min(cantidad, len(vacios)))
+
+    def dibujar(self, ventana):
+        for pos in self.posiciones:
+            if pos not in self.detonadas:
+                ventana.blit(self.imagen, pos)
+
+    def verificar_detonacion(self, jugador, vida):
+        jugador_rect = jugador.rect
+        for pos in self.posiciones:
+            if pos in self.detonadas:
+                continue
+            mina_rect = pygame.Rect(pos[0], pos[1], TAM_CASILLA, TAM_CASILLA)
+            if jugador_rect.colliderect(mina_rect):
+                self.detonadas.add(pos)
+                if hasattr(jugador, 'tiene_escudo') and jugador.tiene_escudo:
+                    jugador.tiene_escudo = False
+                elif hasattr(vida, 'powerup_activo') and vida.powerup_activo:
+                    vida.powerup_activo = False
+                else:
+                    vida.perder_corazones()
+
+class ZonaVeneno:
+    def __init__(self, matriz_juego, cantidad=3):
+        self.imagen = self.cargar_imagen()
+        self.posiciones = self.generar_posiciones(matriz_juego, cantidad)
+        self.tiempo_ultimo_daño = {}
+
+    def cargar_imagen(self):
+        ruta = os.path.join("assets", "Ambientacion", "veneno.png")
+        imagen = pygame.image.load(ruta)
+        return pygame.transform.scale(imagen, (TAM_CASILLA, TAM_CASILLA))
+
+    def generar_posiciones(self, matriz, cantidad):
+        vacios = []
+        for fila in range(len(matriz)):
+            for col in range(len(matriz[0])):
+                if matriz[fila][col] == " ":
+                    vacios.append((col * TAM_CASILLA, fila * TAM_CASILLA))
+        return random.sample(vacios, min(cantidad, len(vacios)))
+
+    def dibujar(self, ventana):
+        for pos in self.posiciones:
+            ventana.blit(self.imagen, pos)
+
+    def aplicar_efecto(self, jugador, vida):
+        ahora = pygame.time.get_ticks()
+        jugador_rect = jugador.rect
+        for pos in self.posiciones:
+            rect = pygame.Rect(pos[0], pos[1], TAM_CASILLA, TAM_CASILLA)
+            if jugador_rect.colliderect(rect):
+                tiempo_anterior = self.tiempo_ultimo_daño.get(pos, 0)
+                if ahora - tiempo_anterior > 1000:
+                    self.tiempo_ultimo_daño[pos] = ahora
+                    if hasattr(jugador, 'tiene_escudo') and jugador.tiene_escudo:
+                        jugador.tiene_escudo = False
+                    elif hasattr(vida, 'powerup_activo') and vida.powerup_activo:
+                        vida.powerup_activo = False
+                    else:
+                        vida.perder_corazones()

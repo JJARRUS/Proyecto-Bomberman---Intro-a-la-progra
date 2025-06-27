@@ -2,30 +2,34 @@
 import pygame
 import os
 
-ruta_base = os.path.dirname(__file__)
-ruta_background = os.path.join(ruta_base, "..", "assets", "fondos", "background.png")
-ruta_bloque_indestruible = os.path.join(ruta_base, "..", "assets", "bloques", "bloque_indestruible.png")
-ruta_bloque_destruible = os.path.join(ruta_base, "..", "assets", "bloques", "bloque_destruible.png")
+TAM_CASILLA = 32
 
-background_img = pygame.image.load(ruta_background)
-bloque_indestruible_img = pygame.image.load(ruta_bloque_indestruible)
-bloque_destruible_img = pygame.image.load(ruta_bloque_destruible)
+def dibujar_background(ventana, matriz, nivel=1):
+    # --- Carga y dibuja el fondo visual único para el nivel ---
+    fondo_path = os.path.join("assets", "Fondos", f"background{nivel}.png")
+    if os.path.exists(fondo_path):
+        fondo = pygame.image.load(fondo_path)
+        fondo = pygame.transform.scale(fondo, ventana.get_size())
+        ventana.blit(fondo, (0, 0))
+    else:
+        ventana.fill((0, 0, 0))
 
-bloque_indestruible_img = pygame.transform.scale(bloque_indestruible_img, (32, 32))
-bloque_destruible_img = pygame.transform.scale(bloque_destruible_img, (32, 32))
+    # --- Carga imágenes de los bloques ---
+    bloque_indes_path = os.path.join("assets", "bloques", "bloque_indestruible.png")
+    bloque_destru_path = os.path.join("assets", "bloques", "bloque_destruible.png")
 
-def dibujar_background(pantalla, matriz):
-    ancho = len(matriz[0]) * 32
-    alto = len(matriz) * 32
-    fondo_escalado = pygame.transform.scale(background_img, (ancho, alto))
-    pantalla.blit(fondo_escalado, (0, 0))
+    bloque_indes = pygame.image.load(bloque_indes_path).convert_alpha()
+    bloque_indes = pygame.transform.scale(bloque_indes, (TAM_CASILLA, TAM_CASILLA))
 
-    for fila_idx, fila in enumerate(matriz):
-        for col_idx, celda in enumerate(fila):
-            x = col_idx * 32
-            y = fila_idx * 32
+    bloque_destru = pygame.image.load(bloque_destru_path).convert_alpha()
+    bloque_destru = pygame.transform.scale(bloque_destru, (TAM_CASILLA, TAM_CASILLA))
 
-            if celda == "I":
-                pantalla.blit(bloque_indestruible_img, (x, y))
-            elif celda == "D":
-                pantalla.blit(bloque_destruible_img, (x, y))
+    # --- Dibuja bloques según la matriz lógica ---
+    for fila in range(len(matriz)):
+        for col in range(len(matriz[0])):
+            x = col * TAM_CASILLA
+            y = fila * TAM_CASILLA
+            if matriz[fila][col] == "I":
+                ventana.blit(bloque_indes, (x, y))
+            elif matriz[fila][col] == "D":
+                ventana.blit(bloque_destru, (x, y))
