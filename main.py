@@ -18,7 +18,6 @@ VENTANA = None
 
 #Función principal del programa:
 def main():
-
    #--- Manejo de audio en la pantalla de inicio ---#
    global VENTANA
 

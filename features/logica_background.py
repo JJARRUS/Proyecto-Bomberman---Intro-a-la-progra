@@ -17,23 +17,19 @@ matriz_logica = [
 ]
 
 def posicion_llave_y_puerta(matriz):
-    destructibles = []
-    espacios_libres = []
+    destructibles = [(fila, col) for fila in range(len(matriz)) for col in range(len(matriz[0])) if matriz[fila][col] == 'D']
+    seleccionadas = random.sample(destructibles, 2)
 
-    for fila in range(len(matriz)):
-        for col in range(len(matriz[0])):
-            if matriz[fila][col] == 'D':
-                destructibles.append((fila, col))
-            elif matriz[fila][col] == ' ':
-                espacios_libres.append((fila, col))
+    fila_llave, col_llave = seleccionadas[0]
+    fila_puerta, col_puerta = seleccionadas[1]
 
-    if len(destructibles) < 1 or len(espacios_libres) < 1:
-        raise ValueError("No hay suficientes espacios para colocar llave y puerta.")
+    pos_llave = (col_llave * 32, fila_llave * 32)
+    pos_puerta = (col_puerta * 32, fila_puerta * 32)
 
-    fila_llave, col_llave = random.choice(destructibles)
-    fila_puerta, col_puerta = random.choice([pos for pos in destructibles if (fila_llave, col_llave) != pos])
+    return pos_llave, pos_puerta, (fila_llave, col_llave)
 
-    llave_pos = (col_llave * 32, fila_llave * 32)
-    puerta_pos = (col_puerta * 32, fila_puerta * 32)
-
-    return llave_pos, puerta_pos, (fila_llave, col_llave)
+def obtener_matriz_y_posiciones(nivel):
+    # Por ahora solo tenemos nivel 1, pero lo hacemos escalable
+    matriz = [fila.copy() for fila in matriz_logica]
+    pos_llave, pos_puerta, pos_matriz_llave = posicion_llave_y_puerta(matriz)
+    return matriz, pos_llave, pos_puerta, pos_matriz_llave

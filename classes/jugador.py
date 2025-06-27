@@ -1,4 +1,39 @@
-from features.imports import *
+import pygame
+
+class JugadorData:
+    def __init__(self, nombre, personaje_num):
+        self.nombre = nombre
+        self.personaje_num = personaje_num
+        self.puntos = 0
+        self.vida_extra = False
+
+        self.items = {
+            "1": None,
+            "2": None,
+            "3": None,
+            "4": None,
+            "5": None
+        }
+
+        self.powerups = {
+            "vida": False,
+            "daño": False
+        }
+
+    def reiniciar_items_y_powerups(self):
+        self.items = {
+            "1": None,
+            "2": None,
+            "3": None,
+            "4": None,
+            "5": None
+        }
+        self.powerups = {
+            "vida": False,
+            "daño": False
+        }
+        self.vida_extra = False
+
 
 class Jugador:
     def __init__(self, nombre, personaje_num, sprite_path):
@@ -10,6 +45,17 @@ class Jugador:
         self.vidas = 3
         self.bombas_disponibles = 5  
         self.velocidad = 5
+        self.velocidad_original = self.velocidad
+        self.velocidad_timer = 0
+        self.escudo_timer = 0
+        self.tiene_escudo = False
+        self.items = {
+            "1": None,
+            "2": None,
+            "3": None,
+            "4": None,
+            "5": None
+        }
 
         self.configurar_personaje()
 
@@ -52,3 +98,24 @@ class Jugador:
     def mover(self, dx, dy):
         self.x += dx * self.velocidad
         self.y += dy * self.velocidad
+
+    def usar_item(self, tipo):
+        if tipo == "bomba":
+            self.bombas_disponibles += 1
+        elif tipo == "velocidad":
+            self.velocidad += 2
+            self.velocidad_timer = pygame.time.get_ticks() + 6000
+        elif tipo == "escudo":
+            self.tiene_escudo = True
+            self.escudo_timer = pygame.time.get_ticks() + 6000
+
+    def actualizar_estado(self):
+        tiempo_actual = pygame.time.get_ticks()
+
+        if self.velocidad_timer > 0 and tiempo_actual > self.velocidad_timer:
+            self.velocidad = self.velocidad_original
+            self.velocidad_timer = 0
+
+        if self.escudo_timer > 0 and tiempo_actual > self.escudo_timer:
+            self.tiene_escudo = False
+            self.escudo_timer = 0

@@ -1,7 +1,7 @@
 import pygame
 import os
 
-tamaño = 32
+TAM_CASILLA = 32
 
 class Jugador(pygame.sprite.Sprite):
     def __init__(self, x, y, personaje_num, matriz_juego):
@@ -11,18 +11,43 @@ class Jugador(pygame.sprite.Sprite):
         self.velocidad = 4
         self.matriz = matriz_juego
         self.bombas_disponibles = 20
+        self.daño_bomba = 1
+        self.rango_bomba = 2
+        self.escudo = False
+        self.vida = None
+        self.ultimo_golpe = 0
+        self.items = {
+            "1": None,
+            "2": None,
+            "3": None,
+            "4": None,
+            "5": None
+            }
+
+        self.velocidad_original = self.velocidad
+        self.velocidad_timer = 0
+        self.escudo_timer = 0
+        self.tiene_escudo = False
 
         carpeta_personaje = ''
         nombre_base = ''
         if personaje_num == 1:
             carpeta_personaje = 'PJ1'
             nombre_base = 'bomberman'
+            self.daño_bomba = 2
+            self.rango_bomba = 2
         elif personaje_num == 2:
             carpeta_personaje = 'PJ2'
             nombre_base = 'bombgirl'
+            self.daño_bomba = 1
+            self.rango_bomba = 3
+            self.velocidad = 6
+            self.velocidad_original = 6
         elif personaje_num == 3:
             carpeta_personaje = 'PJ3'
             nombre_base = 'chosen'
+            self.daño_bomba = 3
+            self.rango_bomba = 1
 
         ruta_base = os.path.join('assets', 'personajes', carpeta_personaje)
         self.imagenes = {
@@ -45,8 +70,8 @@ class Jugador(pygame.sprite.Sprite):
             (nuevo_rect.left, nuevo_rect.bottom - 1),
             (nuevo_rect.right - 1, nuevo_rect.bottom - 1),
         ]:
-            fila = punto[1] // tamaño
-            col = punto[0] // tamaño
+            fila = punto[1] // TAM_CASILLA
+            col = punto[0] // TAM_CASILLA
             if fila < 0 or col < 0 or fila >= len(self.matriz) or col >= len(self.matriz[0]):
                 return False
             if self.matriz[fila][col] in ('I', 'D'):
@@ -77,21 +102,21 @@ class Jugador(pygame.sprite.Sprite):
 
     def obtener_posicion_bomba(self):
         if self.direccion == 'parado':
-            x_bomba = (self.rect.centerx // tamaño) * tamaño
-            y_bomba = (self.rect.centery // tamaño) * tamaño
+            x_bomba = (self.rect.centerx // TAM_CASILLA) * TAM_CASILLA
+            y_bomba = (self.rect.centery // TAM_CASILLA) * TAM_CASILLA
         else:
             x_bomba = self.rect.centerx
             y_bomba = self.rect.centery
             if self.direccion == 'arriba':
-                y_bomba -= tamaño
+                y_bomba -= TAM_CASILLA
             elif self.direccion == 'abajo':
-                y_bomba += tamaño
+                y_bomba += TAM_CASILLA
             elif self.direccion == 'izquierda':
-                x_bomba -= tamaño
+                x_bomba -= TAM_CASILLA
             elif self.direccion == 'derecha':
-                x_bomba += tamaño
-            x_bomba = (x_bomba // tamaño) * tamaño
-            y_bomba = (y_bomba // tamaño) * tamaño
+                x_bomba += TAM_CASILLA
+            x_bomba = (x_bomba // TAM_CASILLA) * TAM_CASILLA
+            y_bomba = (y_bomba // TAM_CASILLA) * TAM_CASILLA
         return x_bomba, y_bomba
 
     def puede_colocar_bomba(self):
@@ -101,5 +126,42 @@ class Jugador(pygame.sprite.Sprite):
         if self.bombas_disponibles > 0:
             self.bombas_disponibles -= 1
 
+    def recuperar_bomba(self):
+        self.bombas_disponibles += 1
+
+    def aplicar_item_powerup(self, tipo):
+        if tipo == "bomba":
+            self.items.append("bomba")
+        elif tipo == "velocidad":
+            self.items.append("velocidad")
+        elif tipo == "escudo":
+            self.items.append("escudo")
+        elif tipo == "vida" and self.vida:
+            self.vida.ganar_vida()
+        elif tipo == "daño":
+            self.daño_bomba += 1
+
+    def actualizar_estado(self):
+        tiempo_actual = pygame.time.get_ticks()
+
+        if self.velocidad_timer > 0 and tiempo_actual > self.velocidad_timer:
+            self.velocidad = self.velocidad_original
+            self.velocidad_timer = 0
+
+        if self.escudo_timer > 0 and tiempo_actual > self.escudo_timer:
+            self.tiene_escudo = False
+            self.escudo_timer = 0
+
     def dibujar(self, ventana):
         ventana.blit(self.foto, self.rect)
+        
+    def usar_item(self, tipo):
+        if tipo == "bomba":
+            self.bombas_disponibles += 1
+        elif tipo == "velocidad":
+            self.velocidad_original = self.velocidad
+            self.velocidad += 2
+            self.velocidad_timer = pygame.time.get_ticks() + 6000
+        elif tipo == "escudo":
+            self.tiene_escudo = True
+            self.escudo_timer = pygame.time.get_ticks() + 6000  
