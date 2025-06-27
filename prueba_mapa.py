@@ -9,6 +9,7 @@ from features.bombas_explosion import Explosivax
 from features.ambientacion import BloqueHielo, Oscuridad, Mina, ZonaVeneno
 from features.items_powerups import ItemPowerUpManager
 from features.habilidades import Flecha, aplicar_habilidad_personaje
+from screens.pantalla_final import mostrar_pantalla_final
 
 ancho = 416
 alto = 480 + 50
@@ -33,6 +34,8 @@ def texto_nivel(ventana, nivel):
     pygame.time.delay(3000)
 
 def jugar_nivel(ventana, nivel, vida):
+    vida.reiniciar()
+
     matriz_juego, pos_llave, pos_puerta, pos_matriz_llave = obtener_matriz_y_posiciones(nivel)
     fila_llave, col_llave = pos_matriz_llave
 
@@ -52,7 +55,7 @@ def jugar_nivel(ventana, nivel, vida):
     aplicar_habilidad_personaje(jugador, jugador.personaje_num)
     if jugador.personaje_num == 3:
         jugador.tiempo_ultima_flecha = pygame.time.get_ticks()
-        jugador.flechas_disponibles = 2  # Reiniciar flechas por nivel
+        jugador.flechas_disponibles = 2
 
     explosivos = Explosivax(max_bombas=jugador.bombas_disponibles)
     bloques_hielo = BloqueHielo(matriz_juego) if nivel == 1 else None
@@ -61,12 +64,10 @@ def jugar_nivel(ventana, nivel, vida):
     veneno = ZonaVeneno(matriz_juego) if nivel == 4 else None
     items_manager = ItemPowerUpManager(matriz_juego)
 
-    # Si The Chosen One, mostrar las flechas en el HUD como ítems especiales
     if jugador.personaje_num == 3:
         items_manager.items_recogidos.append("flecha")
 
     flechas = []
-
     texto_nivel(ventana, nivel)
 
     fuente_chica = pygame.font.SysFont("fixedsys", 20)
@@ -152,6 +153,15 @@ def jugar_nivel(ventana, nivel, vida):
         if jugador.rect.colliderect(pygame.Rect(puerta.x, puerta.y, TAM_CASILLA, TAM_CASILLA)) and tiene_llave:
             return True
 
+        # DERROTA: sin vida o sin bombas
+        if vida.vida_actual == 0 and not vida.powerup_activo and not jugador.tiene_escudo:
+            mostrar_pantalla_final(ventana, "Jugador", 0, "0:00", victoria=False)
+            return False
+
+        if jugador.bombas_disponibles == 0 and not any(not b.exploto for b in explosivos.bombas):
+            mostrar_pantalla_final(ventana, "Jugador", 0, "0:00", victoria=False)
+            return False
+
         ventana.fill((0, 0, 0))
         dibujar_background(ventana, matriz_juego)
         if bloques_hielo:
@@ -194,7 +204,7 @@ def main():
     ventana = pygame.display.set_mode((ancho, alto))
     pygame.display.set_caption("Prueba del mapa")
     vida = Vida(cantidad_vida=3)
-    vida.personaje = 2  # Cambiar a 1 o 2 para probar Bombman o Bombgirl
+    vida.personaje = 2  # Cambiar según personaje: 1, 2, 3
 
     nivel_actual = 1
     total_niveles = 4
@@ -204,7 +214,9 @@ def main():
         if not completado:
             break
         nivel_actual += 1
+        vida.disminuir_vida_maxima()
 
+    mostrar_pantalla_final(ventana, "Jugador", 999, "2:00", victoria=True)
     pygame.quit()
     sys.exit()
 

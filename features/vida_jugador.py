@@ -38,11 +38,23 @@ class Vida:
         self.corazones_extra = 1
         self.corazones_extra_usados = False
 
+    def disminuir_vida_maxima(self):
+        if self.vida_maxima > 1:
+            self.vida_maxima -= 1
+            if self.vida_actual > self.vida_maxima:
+                self.vida_actual = self.vida_maxima
+
     def reiniciar(self):
-        self.vida_actual = self.vida_maxima
+        self.vida_maxima = 3
+        self.vida_actual = 3
         self.powerup_activo = False
-        self.corazones_extra = 0
-        self.corazones_extra_usados = False
+
+        if hasattr(self, 'personaje') and self.personaje == 2:  # Bombgirl
+            self.corazones_extra = 1
+            self.corazones_extra_usados = False
+        else:
+            self.corazones_extra = 0
+            self.corazones_extra_usados = False
 
     def visual(self, ventana, pos_x=10, pos_y=10):
         # Corazones normales
@@ -53,7 +65,7 @@ class Vida:
             else:
                 ventana.blit(self.vacio, (x, pos_y))
 
-        # Corazón extra
+        # Corazón extra (a la derecha de los normales)
         if self.corazones_extra > 0:
             x_extra = pos_x + self.vida_maxima * 40
             if not self.corazones_extra_usados:
