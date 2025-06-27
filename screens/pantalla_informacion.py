@@ -37,9 +37,24 @@ class PantallaInformacion:
         
         tk.Label(self.abajo, text="\nInformación del juego", font=("Fixedsys", 14), bg="black", fg="red").pack(anchor="w", pady=(10, 0), padx=10)
 
-        ayuda = "- Movimiento: w (arriba), a (izquierda), d (derecha)"
-        tk.Label(self.abajo, text=ayuda, font=self.fuente, bg="black", fg="white", justify="left", wraplength=760).pack(anchor="w", padx=20, pady=(5, 0))
-        tk.Label(self.abajo, text="- Poner bombas con X, items con 1, 2 y 3", font=self.fuente, bg="black", fg="white", justify="left", wraplength=760).pack(anchor="w", padx=20, pady=(0, 10))
+        controles = [
+            "- Movimiento: w (arriba), a (izquierda), d (derecha)",
+            "- Colocar bombas con tecla X",
+            "- Usar ítems con teclas 1, 2 y 3",
+            "- Usar habilidad especial con tecla L (solo The Chosen One)"
+        ]
+        for linea in controles:
+            tk.Label(self.abajo, text=linea, font=self.fuente, bg="black", fg="white", justify="left", wraplength=760).pack(anchor="w", padx=20, pady=(0, 2))
+
+        tk.Label(self.abajo, text="\nHabilidades de personajes", font=("Fixedsys", 14), bg="black", fg="red").pack(anchor="w", pady=(15, 0), padx=10)
+
+        habilidades = [
+            "- Bombman: comienza con 2 bombas adicionales.",
+            "- Bombgirl: comienza con 1 corazón adicional.",
+            "- The Chosen One: comienza con 2 flechas. Se lanzan con la tecla 'L'."
+        ]
+        for h in habilidades:
+            tk.Label(self.abajo, text=h, font=self.fuente, bg="black", fg="white", justify="left", wraplength=760).pack(anchor="w", padx=20, pady=(0, 2))
 
     def mostrar_autor(self, nombre, carnet, archivos_foto):
         autor = tk.Frame(self.abajo, bg="black")
