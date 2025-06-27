@@ -7,7 +7,7 @@ from features.vida_jugador import Vida
 from features.llave_puerta import Llave, Puerta
 from features.movimiento_personajes import Jugador
 from features.bombas_explosion import Explosivax
-from features.ambientacion import BloqueHielo, Oscuridad
+from features.ambientacion import BloqueHielo, Oscuridad, Mina, ZonaVeneno
 from features.items_powerups import ItemPowerUpManager
 
 ancho = 416
@@ -52,6 +52,8 @@ def jugar_nivel(ventana, nivel, vida):
     explosivos = Explosivax(max_bombas=3)
     bloques_hielo = BloqueHielo(matriz_juego) if nivel == 1 else None
     oscuridad = Oscuridad(jugador, matriz_juego, ancho, alto) if nivel == 2 else None
+    minas = Mina(matriz_juego) if nivel == 3 else None
+    veneno = ZonaVeneno(matriz_juego) if nivel == 4 else None
     items_manager = ItemPowerUpManager(matriz_juego)
 
     texto_nivel(ventana, nivel)
@@ -81,10 +83,15 @@ def jugar_nivel(ventana, nivel, vida):
         jugador.movimiento(teclas)
         jugador.actualizar_estado()
         explosivos.actualizar()
+
         if bloques_hielo:
             bloques_hielo.aplicar_efecto(jugador)
-        items_manager.actualizar(jugador, vida)
+        if minas:
+            minas.verificar_detonacion(jugador, vida)
+        if veneno:
+            veneno.aplicar_efecto(jugador, vida)
 
+        items_manager.actualizar(jugador, vida)
         if items_manager.recogio_powerup_vida:
             items_manager.recogio_powerup_vida = False
 
@@ -119,12 +126,16 @@ def jugar_nivel(ventana, nivel, vida):
             llave.recogida = True
 
         if jugador.rect.colliderect(pygame.Rect(puerta.x, puerta.y, TAM_CASILLA, TAM_CASILLA)) and tiene_llave:
-            return True  # Nivel completado
+            return True
 
         ventana.fill((0, 0, 0))
         dibujar_background(ventana, matriz_juego)
         if bloques_hielo:
             bloques_hielo.dibujar(ventana)
+        if minas:
+            minas.dibujar(ventana)
+        if veneno:
+            veneno.dibujar(ventana)
         items_manager.dibujar(ventana)
 
         if not tiene_llave and not llave.recogida:

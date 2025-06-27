@@ -11,7 +11,7 @@ class Jugador(pygame.sprite.Sprite):
         self.velocidad = 4
         self.velocidad_base = 4
         self.matriz = matriz_juego
-        self.bombas_disponibles = 5
+        self.bombas_disponibles = 8
         self.items = []  
         self.tiene_escudo = False
         self.tiempo_escudo = 0
