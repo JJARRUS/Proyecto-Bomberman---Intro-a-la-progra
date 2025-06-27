@@ -1,4 +1,3 @@
-
 import pygame
 import os
 
@@ -7,17 +6,24 @@ class Vida:
         self.vida_maxima = cantidad_vida
         self.vida_actual = cantidad_vida
         self.powerup_activo = False
+        self.corazones_extra = 0
+        self.corazones_extra_usados = False
 
         original = os.path.dirname(__file__)
-        foto_lleno = os.path.join(original, "..", "assets", "items", "corazon.png")
-        corazon_none = os.path.join(original, "..", "assets", "items", "corazon_vacio.png")
+        ruta_lleno = os.path.join(original, "..", "assets", "items", "corazon.png")
+        ruta_vacio = os.path.join(original, "..", "assets", "items", "corazon_vacio.png")
 
-        self.completo = pygame.transform.scale(pygame.image.load(foto_lleno), (32, 32))
-        self.vacio = pygame.transform.scale(pygame.image.load(corazon_none), (32, 32))
+        imagen_lleno = pygame.image.load(ruta_lleno)
+        imagen_vacio = pygame.image.load(ruta_vacio)
+
+        self.completo = pygame.transform.scale(imagen_lleno, (32, 32))
+        self.vacio = pygame.transform.scale(imagen_vacio, (32, 32))
 
     def perder_corazones(self):
         if self.powerup_activo:
             self.powerup_activo = False
+        elif self.corazones_extra > 0 and not self.corazones_extra_usados:
+            self.corazones_extra_usados = True
         elif self.vida_actual > 0:
             self.vida_actual -= 1
 
@@ -28,29 +34,29 @@ class Vida:
     def activar_powerup_vida(self):
         self.powerup_activo = True
 
+    def agregar_corazon_extra(self):
+        self.corazones_extra = 1
+        self.corazones_extra_usados = False
+
     def reiniciar(self):
         self.vida_actual = self.vida_maxima
         self.powerup_activo = False
+        self.corazones_extra = 0
+        self.corazones_extra_usados = False
 
     def visual(self, ventana, pos_x=10, pos_y=10):
+        # Corazones normales
         for i in range(self.vida_maxima):
             x = pos_x + i * 40
             if i < self.vida_actual:
                 ventana.blit(self.completo, (x, pos_y))
             else:
                 ventana.blit(self.vacio, (x, pos_y))
-#Explicacion del codigo
 
-"""
-En clase vida se recibe como parametro la cantidad total de vidas (3 en este caso)
-y la guarda en self.vida_maxima y self.vbda_actual. Luego con import os
-se usa el corazon vacio y lleno.
-
-Se cargan con pygame.image.load() y se escalan con 32x32 con pygame.transform.scale()
-
-El perder_corazones() se llama cuando el jugador recibe un golpe. Si es mayor que 1
-le resta 1 corazon. El metodo aumento__vida permite que lo recupere si no ha llego al max
-
-Reiniciar() es para cuando se comienza un nuevo nivel o si pierdes una vida completa
-
-"""
+        # Corazón extra
+        if self.corazones_extra > 0:
+            x_extra = pos_x + self.vida_maxima * 40
+            if not self.corazones_extra_usados:
+                ventana.blit(self.completo, (x_extra, pos_y))
+            else:
+                ventana.blit(self.vacio, (x_extra, pos_y))

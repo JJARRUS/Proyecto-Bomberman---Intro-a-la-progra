@@ -12,10 +12,16 @@ class Jugador(pygame.sprite.Sprite):
         self.velocidad_base = 4
         self.matriz = matriz_juego
         self.bombas_disponibles = 8
-        self.items = []  
+        self.items = []
         self.tiene_escudo = False
         self.tiempo_escudo = 0
         self.tiempo_velocidad = 0
+
+        # Habilidad The Chosen One
+        self.flechas = []
+        self.flechas_disponibles = 0
+        self.cooldown_flechas = 2000
+        self.ultimo_disparo = 0
 
         carpeta_personaje = ''
         nombre_base = ''
@@ -116,7 +122,7 @@ class Jugador(pygame.sprite.Sprite):
             elif tipo == 'escudo':
                 self.tiene_escudo = True
                 self.tiempo_escudo = pygame.time.get_ticks()
-            self.items.remove(tipo)  
+            self.items.remove(tipo)
 
     def actualizar_estado(self):
         tiempo_actual = pygame.time.get_ticks()

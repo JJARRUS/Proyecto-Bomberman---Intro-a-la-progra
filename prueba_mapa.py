@@ -1,6 +1,5 @@
 import pygame
 import sys
-import os
 from features.background import dibujar_background
 from features.logica_background import obtener_matriz_y_posiciones
 from features.vida_jugador import Vida
@@ -9,6 +8,7 @@ from features.movimiento_personajes import Jugador
 from features.bombas_explosion import Explosivax
 from features.ambientacion import BloqueHielo, Oscuridad, Mina, ZonaVeneno
 from features.items_powerups import ItemPowerUpManager
+from features.habilidades import Flecha, aplicar_habilidad_personaje
 
 ancho = 416
 alto = 480 + 50
@@ -40,7 +40,7 @@ def jugar_nivel(ventana, nivel, vida):
     puerta = Puerta(pos_puerta[0], pos_puerta[1])
     tiene_llave = False
 
-    jugador = Jugador(TAM_CASILLA, TAM_CASILLA, personaje_num=1, matriz_juego=matriz_juego)
+    jugador = Jugador(TAM_CASILLA, TAM_CASILLA, personaje_num=vida.personaje, matriz_juego=matriz_juego)
     jugador.vida_objeto = vida
     jugador.items = []
     jugador.daño_bomba = 2
@@ -49,12 +49,23 @@ def jugar_nivel(ventana, nivel, vida):
     jugador.velocidad_timer = 0
     jugador.escudo_timer = 0
 
-    explosivos = Explosivax(max_bombas=3)
+    aplicar_habilidad_personaje(jugador, jugador.personaje_num)
+    if jugador.personaje_num == 3:
+        jugador.tiempo_ultima_flecha = pygame.time.get_ticks()
+        jugador.flechas_disponibles = 2  # Reiniciar flechas por nivel
+
+    explosivos = Explosivax(max_bombas=jugador.bombas_disponibles)
     bloques_hielo = BloqueHielo(matriz_juego) if nivel == 1 else None
     oscuridad = Oscuridad(jugador, matriz_juego, ancho, alto) if nivel == 2 else None
     minas = Mina(matriz_juego) if nivel == 3 else None
     veneno = ZonaVeneno(matriz_juego) if nivel == 4 else None
     items_manager = ItemPowerUpManager(matriz_juego)
+
+    # Si The Chosen One, mostrar las flechas en el HUD como ítems especiales
+    if jugador.personaje_num == 3:
+        items_manager.items_recogidos.append("flecha")
+
+    flechas = []
 
     texto_nivel(ventana, nivel)
 
@@ -78,20 +89,33 @@ def jugar_nivel(ventana, nivel, vida):
                     if indice < len(jugador.items):
                         tipo = jugador.items[indice]
                         jugador.usar_item(tipo)
+                elif evento.key == pygame.K_l and jugador.personaje_num == 3:
+                    if jugador.flechas_disponibles > 0:
+                        x, y = jugador.rect.center
+                        nueva = Flecha(x, y, jugador.direccion, matriz_juego)
+                        flechas.append(nueva)
+                        jugador.flechas_disponibles -= 1
+                        jugador.tiempo_ultima_flecha = pygame.time.get_ticks()
+                        if jugador.flechas_disponibles == 0 and "flecha" in items_manager.items_recogidos:
+                            items_manager.items_recogidos.remove("flecha")
 
         teclas = pygame.key.get_pressed()
         jugador.movimiento(teclas)
         jugador.actualizar_estado()
         explosivos.actualizar()
-
         if bloques_hielo:
             bloques_hielo.aplicar_efecto(jugador)
         if minas:
             minas.verificar_detonacion(jugador, vida)
         if veneno:
             veneno.aplicar_efecto(jugador, vida)
-
         items_manager.actualizar(jugador, vida)
+
+        for flecha in flechas[:]:
+            flecha.actualizar()
+            if flecha.colisiono:
+                flechas.remove(flecha)
+
         if items_manager.recogio_powerup_vida:
             items_manager.recogio_powerup_vida = False
 
@@ -137,14 +161,14 @@ def jugar_nivel(ventana, nivel, vida):
         if veneno:
             veneno.dibujar(ventana)
         items_manager.dibujar(ventana)
-
+        for flecha in flechas:
+            flecha.dibujar(ventana)
         if not tiene_llave and not llave.recogida:
             llave.dibujar(ventana)
         puerta.activa = True
         puerta.dibujar(ventana)
         explosivos.dibujar(ventana)
         jugador.dibujar(ventana)
-
         if oscuridad:
             oscuridad.dibujar(ventana)
 
@@ -170,6 +194,7 @@ def main():
     ventana = pygame.display.set_mode((ancho, alto))
     pygame.display.set_caption("Prueba del mapa")
     vida = Vida(cantidad_vida=3)
+    vida.personaje = 2  # Cambiar a 1 o 2 para probar Bombman o Bombgirl
 
     nivel_actual = 1
     total_niveles = 4

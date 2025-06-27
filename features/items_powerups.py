@@ -24,7 +24,8 @@ class ItemPowerUpManager:
             'velocidad': "velocidad_item.png",
             'escudo': "escudo_item.png",
             'vida': "vida_pu.png",
-            'daño': "damage_pu.png"
+            'daño': "damage_pu.png",
+            'flecha': "arrow.png"
         }
         for clave, nombre in archivos.items():
             imagen = pygame.image.load(os.path.join(ruta, nombre))
@@ -54,7 +55,8 @@ class ItemPowerUpManager:
             if item['activo'] and jugador_rect.colliderect(pygame.Rect(item['x'], item['y'], TAM, TAM)):
                 item['activo'] = False
                 jugador.items.append(item['tipo'])
-                self.items_recogidos.append(item['tipo'])
+                if item['tipo'] not in self.items_recogidos:
+                    self.items_recogidos.append(item['tipo'])
 
         for pu in self.powerups:
             if pu['activo'] and jugador_rect.colliderect(pygame.Rect(pu['x'], pu['y'], TAM, TAM)):
@@ -92,9 +94,17 @@ class ItemPowerUpManager:
                 ventana.blit(self.imagenes[pu['tipo']], (pu['x'], pu['y']))
 
     def mostrar_items_superiores(self, ventana, jugador, fuente, alto):
-        x_inicio = 10 + jugador.vida_objeto.vida_maxima * 40 + 10
+        x_inicio = 10 + jugador.vida_objeto.vida_maxima * 40 + (10 if jugador.vida_objeto.corazones_extra else 0) + 40
         y = alto - 90  
         total = self.items_recogidos + self.powerups_visuales
+
+        # Mostrar flechas si aún quedan y es The Chosen One
+        if jugador.personaje_num == 3 and jugador.flechas_disponibles > 0:
+            if 'flecha' not in total:
+                total.insert(0, 'flecha')
+        elif 'flecha' in total:
+            total.remove('flecha')
+
         total = total[:5]
 
         for i, nombre in enumerate(total):
@@ -103,3 +113,4 @@ class ItemPowerUpManager:
                 if nombre in self.items_recogidos:
                     texto = fuente.render(str(i + 1), True, (255, 255, 255))
                     ventana.blit(texto, (x_inicio + i * 40 + 20, y + 25))
+
