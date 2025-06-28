@@ -37,6 +37,19 @@ def destruir_bloque(matriz, x, y):
             return True, fila, col
     return False, None, None
 
+# --- NUEVO: Encuentra zona libre 2x2 para el boss ---
+def obtener_spawn_boss(matriz):
+    opciones = []
+    for fila in range(1, len(matriz)-1):
+        for col in range(1, len(matriz[0])-1):
+            if (matriz[fila][col] == " " and matriz[fila+1][col] == " " and
+                matriz[fila][col+1] == " " and matriz[fila+1][col+1] == " "):
+                opciones.append((col * TAM_CASILLA, fila * TAM_CASILLA))
+    if not opciones:
+        # Si por algún motivo no hay, regresa el centro
+        return (TAM_CASILLA * (len(matriz[0])//2), TAM_CASILLA * (len(matriz)//2))
+    return random.choice(opciones)
+
 def mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual=1, puntos_acumulados=0):
     fuente_chica = pygame.font.SysFont("fixedsys", 20)
     tiempo_inicio = pygame.time.get_ticks()
@@ -77,13 +90,16 @@ def mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual=1, puntos_acumu
 
     jefe_muerto = False
 
+    # --- SPAWN ENEMIGOS POR NIVEL ---
     if nivel_actual == 4:
         cantidad_enemigos = 3
-        spawns = obtener_posiciones_spawn(matriz_juego, cantidad_enemigos, posiciones_prohibidas=posiciones_prohibidas)
+        # Dos flecheros spawnean normalmente, boss solo donde cabe
+        spawns = obtener_posiciones_spawn(matriz_juego, cantidad_enemigos-1, posiciones_prohibidas=posiciones_prohibidas)
+        boss_spawn = obtener_spawn_boss(matriz_juego)
         enemigos = [
             Enemigo(spawns[0][0], spawns[0][1], tipo="flechas"),
             Enemigo(spawns[1][0], spawns[1][1], tipo="flechas"),
-            Enemigo(spawns[2][0], spawns[2][1], tipo="boss"),
+            Enemigo(boss_spawn[0], boss_spawn[1], tipo="boss"),
         ]
     elif nivel_actual == 3:
         cantidad_enemigos = 5
