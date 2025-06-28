@@ -55,7 +55,6 @@ def mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual=1, puntos_acumu
 
     aplicar_habilidad_personaje(jugador, jugador.personaje_num)
 
-    # Restar 1 bomba por nivel (mínimo 1)
     jugador.bombas_disponibles = max(1, jugador.bombas_disponibles - (nivel_actual - 1))
 
     llave = Llave(pos_llave[0], pos_llave[1])
@@ -63,7 +62,6 @@ def mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual=1, puntos_acumu
     tiene_llave = False
 
     explosivos = Explosivax(max_bombas=jugador.bombas_disponibles)
-    oscuridad = Oscuridad(jugador, matriz_juego, ANCHO, ALTO)
     monedas = Moneda(matriz_juego)
     items_manager = ItemPowerUpManager(matriz_juego)
 
@@ -72,6 +70,7 @@ def mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual=1, puntos_acumu
             items_manager.items_recogidos.append("flecha")
 
     bloques_hielo = BloqueHielo(matriz_juego) if nivel_actual == 1 else None
+    oscuridad = Oscuridad(jugador, matriz_juego, ANCHO, ALTO) if nivel_actual == 2 else None
     minas = Mina(matriz_juego) if nivel_actual == 3 else None
     veneno = ZonaVeneno(matriz_juego) if nivel_actual == 4 else None
 
@@ -230,6 +229,9 @@ def mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual=1, puntos_acumu
 
         explosivos.dibujar(VENTANA)
         jugador.dibujar(VENTANA)
+
+        if oscuridad:
+            oscuridad.dibujar(VENTANA)
 
         pygame.draw.rect(VENTANA, (30, 30, 30), (0, ALTO - HUD_HEIGHT, ANCHO, HUD_HEIGHT))
         vida.visual(VENTANA, pos_x=10, pos_y=ALTO - 40)

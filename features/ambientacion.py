@@ -57,10 +57,23 @@ class Oscuridad:
         self.matriz = matriz
 
     def dibujar(self, ventana):
-        self.superficie.fill((0, 0, 0, 200))
+        self.superficie.fill((0, 0, 0, 200))  
+
         centro_x = self.jugador.rect.centerx
         centro_y = self.jugador.rect.centery
         pygame.draw.circle(self.superficie, (0, 0, 0, 0), (centro_x, centro_y), self.radio)
+        for fila in [0, len(self.matriz) - 1]:
+            for col in range(len(self.matriz[0])):
+                x = col * TAM_CASILLA
+                y = fila * TAM_CASILLA
+                pygame.draw.rect(self.superficie, (0, 0, 0, 0), (x, y, TAM_CASILLA, TAM_CASILLA))
+
+        for fila in range(len(self.matriz)):
+            for col in [0, len(self.matriz[0]) - 1]:
+                x = col * TAM_CASILLA
+                y = fila * TAM_CASILLA
+                pygame.draw.rect(self.superficie, (0, 0, 0, 0), (x, y, TAM_CASILLA, TAM_CASILLA))
+
         ventana.blit(self.superficie, (0, 0))
 
 class Mina:
