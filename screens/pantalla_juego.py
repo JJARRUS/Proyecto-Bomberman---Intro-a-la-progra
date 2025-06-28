@@ -151,6 +151,7 @@ def mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual=1, puntos_acumu
                 for x_bloq, y_bloq in coords:
                     destruido, fila, col = destruir_bloque(matriz_juego, x_bloq, y_bloq)
                     if destruido:
+                        puntos += 10  # ← +10 puntos al destruir bloque
                         if (x_bloq, y_bloq) == (col_llave * TAM_CASILLA, fila_llave * TAM_CASILLA):
                             llave.visible = True
                         if (x_bloq, y_bloq) == (col_puerta * TAM_CASILLA, fila_puerta * TAM_CASILLA):
@@ -178,6 +179,7 @@ def mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual=1, puntos_acumu
         if not tiene_llave and not llave.recogida and llave.visible and jugador.rect.colliderect(pygame.Rect(llave.x, llave.y, TAM_CASILLA, TAM_CASILLA)):
             tiene_llave = True
             llave.recogida = True
+            puntos += 100  # ← +100 puntos al recoger la llave
 
         # --- AVANCE DE NIVEL ---
         if puerta_visible and jugador.rect.colliderect(pygame.Rect(puerta.x, puerta.y, TAM_CASILLA, TAM_CASILLA)):
@@ -226,9 +228,9 @@ def mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual=1, puntos_acumu
         explosivos.dibujar(VENTANA)
         jugador.dibujar(VENTANA)
 
+        # HUD
         pygame.draw.rect(VENTANA, (30, 30, 30), (0, ALTO - HUD_HEIGHT, ANCHO, HUD_HEIGHT))
         vida.visual(VENTANA, pos_x=10, pos_y=ALTO - 40)
-
         if tiene_llave:
             llave.dibujar_llave(VENTANA)
 
@@ -237,6 +239,10 @@ def mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual=1, puntos_acumu
         VENTANA.blit(texto_tiempo, (310, ALTO - 35))
         texto_bombas = fuente_chica.render(f"Bombas: {jugador.bombas_disponibles}", True, (255, 255, 255))
         VENTANA.blit(texto_bombas, (200, ALTO - 35))
+
+        # --- NUEVO: PUNTOS ---
+        texto_puntos = fuente_chica.render(f"Puntos: {puntos}", True, (255, 215, 0))
+        VENTANA.blit(texto_puntos, (30, ALTO - 75))
 
         items_manager.mostrar_items_superiores(VENTANA, jugador, fuente_chica, ALTO)
 

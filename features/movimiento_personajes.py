@@ -9,7 +9,7 @@ class Jugador(pygame.sprite.Sprite):
         self.personaje_num = personaje_num
         self.direccion = 'parado'
         self.velocidad = 4
-        self.velocidad_base = 4
+        self.velocidad_base = 5
         self.daño_bomba = 1  
         self.matriz = matriz_juego
         self.bombas_disponibles = 20
