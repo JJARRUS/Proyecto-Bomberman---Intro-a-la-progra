@@ -53,6 +53,6 @@ def aplicar_habilidad_personaje(jugador, tipo):
     if tipo == 1:  # Bombman: 2 bombas extra
         jugador.bombas_disponibles += 2
     elif tipo == 2:  # Bombgirl: 1 vida adicional
-        jugador.vida_objeto.corazones_extra = 1
+        jugador.vida.corazones_extra = 1
     elif tipo == 3:  # The Chosen One
         jugador.flechas_disponibles = 2  # Solo 2 por nivel

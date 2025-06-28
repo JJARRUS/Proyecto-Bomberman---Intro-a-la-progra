@@ -12,12 +12,13 @@ from features.enemigos import Enemigo
 from features.monedas import Moneda
 from features.items_powerups import ItemPowerUpManager
 from screens.pantalla_final import mostrar_pantalla_final
+from features.habilidades import aplicar_habilidad_personaje, Flecha
 
 ANCHO = 416
 ALTO = 480 + 50
 TAM_CASILLA = 32
 HUD_HEIGHT = 50
-MAX_NIVELES = 4  # Cambia si agregas más niveles
+MAX_NIVELES = 4
 
 def mostrar_texto_nivel(ventana, texto="NIVEL 1"):
     ventana.fill((0, 0, 0))
@@ -48,38 +49,34 @@ def mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual=1, puntos_acumu
     puerta_visible = False
 
     vida = Vida(cantidad_vida=3)
-    llave = Llave(pos_llave[0], pos_llave[1])
-    puerta = Puerta(pos_puerta[0], pos_puerta[1])
-    tiene_llave = False
-
     jugador = Jugador(TAM_CASILLA, TAM_CASILLA, personaje_num=jugador_objeto.personaje_num, matriz_juego=matriz_juego)
     jugador.vida = vida
     jugador.ultimo_golpe = 0
 
-    explosivos = Explosivax(max_bombas=3)
+    aplicar_habilidad_personaje(jugador, jugador.personaje_num)
+
+    # Restar 1 bomba por nivel (mínimo 1)
+    jugador.bombas_disponibles = max(1, jugador.bombas_disponibles - (nivel_actual - 1))
+
+    llave = Llave(pos_llave[0], pos_llave[1])
+    puerta = Puerta(pos_puerta[0], pos_puerta[1])
+    tiene_llave = False
+
+    explosivos = Explosivax(max_bombas=jugador.bombas_disponibles)
     oscuridad = Oscuridad(jugador, matriz_juego, ANCHO, ALTO)
     monedas = Moneda(matriz_juego)
     items_manager = ItemPowerUpManager(matriz_juego)
 
-    # Activar solo la trampa que corresponde por nivel
-    bloques_hielo = None
-    minas = None
-    veneno = None
+    if jugador.personaje_num == 3:
+        if "flecha" not in items_manager.items_recogidos:
+            items_manager.items_recogidos.append("flecha")
 
-    if nivel_actual == 1:
-        bloques_hielo = BloqueHielo(matriz_juego)
-    elif nivel_actual == 3:
-        minas = Mina(matriz_juego)
-    elif nivel_actual == 4:
-        veneno = ZonaVeneno(matriz_juego)
+    bloques_hielo = BloqueHielo(matriz_juego) if nivel_actual == 1 else None
+    minas = Mina(matriz_juego) if nivel_actual == 3 else None
+    veneno = ZonaVeneno(matriz_juego) if nivel_actual == 4 else None
 
-    enemigos = [
-        Enemigo(160, 160),
-        Enemigo(320, 160),
-        Enemigo(160, 320)
-    ]
+    enemigos = [Enemigo(160, 160), Enemigo(320, 160), Enemigo(160, 320)]
 
-    # --- CAMBIO DE FONDO Y MÚSICA SEGÚN NIVEL ---
     mostrar_texto_nivel(VENTANA, f"NIVEL {nivel_actual}")
 
     if nivel_actual == 4:
@@ -93,6 +90,7 @@ def mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual=1, puntos_acumu
             pygame.mixer.music.load(ruta_normal)
             pygame.mixer.music.play(-1)
 
+    flechas = []
     bombas_dañando = set()
     corriendo = True
 
@@ -106,21 +104,34 @@ def mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual=1, puntos_acumu
                     x_bomba, y_bomba = jugador.obtener_posicion_bomba()
                     fila = y_bomba // TAM_CASILLA
                     col = x_bomba // TAM_CASILLA
-                    if 0 <= fila < len(matriz_juego) and 0 <= col < len(matriz_juego[0]):
-                        if matriz_juego[fila][col] == " ":
-                            explosivos.colocar_bomba(x_bomba, y_bomba, jugador=jugador)
+                    if matriz_juego[fila][col] == " ":
+                        explosivos.colocar_bomba(x_bomba, y_bomba, jugador=jugador)
                 elif evento.key in [pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4, pygame.K_5]:
                     tecla = str(evento.key - pygame.K_0)
                     tipo = jugador.items.get(tecla)
                     if tipo:
-                        items_manager.usar_item(jugador, tipo)
+                        items_manager.usar_item(jugador, tipo, vida)
+                elif evento.key == pygame.K_r:
+                    if "vida" in items_manager.powerups_visibles:
+                        vida.activar_powerup_vida()
+                        items_manager.powerups_visibles.remove("vida")
+                elif evento.key == pygame.K_t:
+                    if "daño" in items_manager.powerups_visibles:
+                        jugador.daño_bomba += 1
+                        items_manager.powerups_visibles.remove("daño")
+                elif evento.key == pygame.K_l and jugador.personaje_num == 3:
+                    if jugador.flechas_disponibles > 0:
+                        nueva = Flecha(jugador.rect.centerx, jugador.rect.centery, jugador.direccion, matriz_juego)
+                        flechas.append(nueva)
+                        jugador.flechas_disponibles -= 1
+                        jugador.tiempo_ultima_flecha = pygame.time.get_ticks()
+                        if jugador.flechas_disponibles == 0 and "flecha" in items_manager.items_recogidos:
+                            items_manager.items_recogidos.remove("flecha")
 
         teclas = pygame.key.get_pressed()
         jugador.movimiento(teclas)
         jugador.actualizar_estado()
         explosivos.actualizar()
-
-        oscuridad.dibujar(VENTANA)
 
         if bloques_hielo:
             bloques_hielo.aplicar_efecto(jugador)
@@ -132,7 +143,6 @@ def mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual=1, puntos_acumu
         items_manager.actualizar(jugador, vida)
 
         tiempo_actual = pygame.time.get_ticks()
-
         for enemigo in enemigos:
             enemigo.actualizar(jugador, vida, matriz_juego, tiempo_actual, 1000)
 
@@ -145,10 +155,14 @@ def mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual=1, puntos_acumu
             if enemigo.verificar_muerte(explosiones):
                 puntos += 200
 
+        for flecha in flechas[:]:
+            flecha.actualizar()
+            if flecha.colisiono:
+                flechas.remove(flecha)
+
         for bomba in explosivos.bombas:
             if bomba.exploto:
-                coords = bomba.jugador_esta
-                for x_bloq, y_bloq in coords:
+                for x_bloq, y_bloq in bomba.jugador_esta:
                     destruido, fila, col = destruir_bloque(matriz_juego, x_bloq, y_bloq)
                     if destruido:
                         if (x_bloq, y_bloq) == (col_llave * TAM_CASILLA, fila_llave * TAM_CASILLA):
@@ -156,22 +170,21 @@ def mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual=1, puntos_acumu
                         if (x_bloq, y_bloq) == (col_puerta * TAM_CASILLA, fila_puerta * TAM_CASILLA):
                             puerta_visible = True
                         items_manager.liberar_objeto(col, fila)
-
                 if bomba not in bombas_dañando:
                     jugador_centro = pygame.Rect(jugador.rect.centerx, jugador.rect.centery, 1, 1)
-                    for x_exp, y_exp in coords:
-                        rect_exp = pygame.Rect(x_exp, y_exp, TAM_CASILLA, TAM_CASILLA)
-                        if rect_exp.colliderect(jugador_centro):
+                    for x_exp, y_exp in bomba.jugador_esta:
+                        if pygame.Rect(x_exp, y_exp, TAM_CASILLA, TAM_CASILLA).colliderect(jugador_centro):
                             if jugador.tiene_escudo:
                                 jugador.tiene_escudo = False
-                            elif vida.powerup_activo:
-                                vida.powerup_activo = False
                             else:
                                 vida.perder_corazones()
                             bombas_dañando.add(bomba)
                             break
 
-        explosivos.bombas = [b for b in explosivos.bombas if not b.exploto or pygame.time.get_ticks() - b.tiempo_explosion < b.tiempo_explota]
+        explosivos.bombas = [
+            b for b in explosivos.bombas
+            if not b.exploto or pygame.time.get_ticks() - b.tiempo_explosion < b.tiempo_explota
+        ]
 
         puntos += monedas.recoger(jugador.rect)
 
@@ -179,30 +192,20 @@ def mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual=1, puntos_acumu
             tiene_llave = True
             llave.recogida = True
 
-        # --- AVANCE DE NIVEL ---
         if puerta_visible and jugador.rect.colliderect(pygame.Rect(puerta.x, puerta.y, TAM_CASILLA, TAM_CASILLA)):
             if tiene_llave:
                 if nivel_actual < MAX_NIVELES:
-                    mostrar_texto_nivel(VENTANA, f"NIVEL {nivel_actual + 1}")
                     return mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual + 1, puntos)
                 else:
                     duracion = (pygame.time.get_ticks() - tiempo_inicio) // 1000
-                    minutos = duracion // 60
-                    segundos = duracion % 60
-                    duracion_texto = f"{minutos}:{segundos:02}"
-                    mostrar_pantalla_final(VENTANA, jugador_objeto.nombre, puntos, duracion_texto, True)
+                    mostrar_pantalla_final(VENTANA, jugador_objeto.nombre, puntos, f"{duracion // 60}:{duracion % 60:02}", True)
                     return
 
-        # --- DERROTA ---
         if vida.vida_actual <= 0:
             duracion = (pygame.time.get_ticks() - tiempo_inicio) // 1000
-            minutos = duracion // 60
-            segundos = duracion % 60
-            duracion_texto = f"{minutos}:{segundos:02}"
-            mostrar_pantalla_final(VENTANA, jugador_objeto.nombre, puntos, duracion_texto, False)
+            mostrar_pantalla_final(VENTANA, jugador_objeto.nombre, puntos, f"{duracion // 60}:{duracion % 60:02}", False)
             return
 
-        # --- DIBUJADO ---
         dibujar_background(VENTANA, matriz_juego, nivel=nivel_actual)
         if bloques_hielo:
             bloques_hielo.dibujar(VENTANA)
@@ -216,9 +219,11 @@ def mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual=1, puntos_acumu
         for enemigo in enemigos:
             enemigo.dibujar(VENTANA)
 
+        for flecha in flechas:
+            flecha.dibujar(VENTANA)
+
         if not tiene_llave and not llave.recogida:
             llave.dibujar(VENTANA)
-
         if puerta_visible:
             puerta.activa = True
             puerta.dibujar(VENTANA)

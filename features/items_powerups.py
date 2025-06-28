@@ -10,7 +10,6 @@ class ItemPowerUpManager:
         self.powerups = []
         self.imagenes = {}
         self.matriz = matriz
-        self.recogio_powerup_vida = False
         self.items_recogidos = []
         self.powerups_visibles = []
         self.cargar_imagenes()
@@ -30,7 +29,12 @@ class ItemPowerUpManager:
             self.imagenes[clave] = pygame.transform.scale(imagen, (TAM, TAM))
 
     def colocar_objetos(self):
-        destructibles = [(col, fila) for fila in range(len(self.matriz)) for col in range(len(self.matriz[0])) if self.matriz[fila][col] == 'D']
+        destructibles = [
+            (col, fila)
+            for fila in range(len(self.matriz))
+            for col in range(len(self.matriz[0]))
+            if self.matriz[fila][col] == 'D'
+        ]
         random.shuffle(destructibles)
         tipos = ['bomba', 'velocidad', 'escudo', 'vida', 'daño']
         colocados = []
@@ -39,8 +43,7 @@ class ItemPowerUpManager:
             while destructibles:
                 col, fila = destructibles.pop()
                 x, y = col * TAM, fila * TAM
-                ocupado = any(obj['x'] == x and obj['y'] == y for obj in colocados)
-                if not ocupado:
+                if not any(obj['x'] == x and obj['y'] == y for obj in colocados):
                     nuevo = {'tipo': tipo, 'x': x, 'y': y, 'activo': False}
                     colocados.append(nuevo)
                     if tipo in ['bomba', 'velocidad', 'escudo']:
@@ -69,16 +72,16 @@ class ItemPowerUpManager:
         for pu in self.powerups:
             if pu['activo'] and jugador_rect.colliderect(pygame.Rect(pu['x'], pu['y'], TAM, TAM)):
                 pu['activo'] = False
-                if pu['tipo'] == 'vida':
-                    vida.ganar_vida()
-                    self.recogio_powerup_vida = True
-                elif pu['tipo'] == 'daño':
-                    jugador.daño_bomba += 1
                 if pu['tipo'] not in self.powerups_visibles:
                     self.powerups_visibles.append(pu['tipo'])
 
-    def usar_item(self, jugador, tipo):
-        jugador.usar_item(tipo)
+    def usar_item(self, jugador, tipo, vida):
+        if tipo == 'vida':
+            vida.activar_powerup_vida()
+        elif tipo == 'daño':
+            jugador.daño_bomba += 1
+        else:
+            jugador.usar_item(tipo)
         for key, value in jugador.items.items():
             if value == tipo:
                 jugador.items[key] = None
@@ -96,6 +99,11 @@ class ItemPowerUpManager:
 
     def mostrar_items_superiores(self, ventana, jugador, fuente, alto):
         x_inicio = 10 + jugador.vida.vida_maxima * 40 + 10
+        if jugador.vida.powerup_vida_activo:
+            x_inicio += 40
+        if jugador.vida.corazones_extra:
+            x_inicio += 40
+
         y = alto - 90
         total = self.items_recogidos + self.powerups_visibles
         total = total[:5]
