@@ -1,6 +1,7 @@
 import pygame
 import sys
 import os
+import random
 from features.background import dibujar_background
 from features.logica_background import obtener_matriz_y_posiciones
 from features.vida_jugador import Vida
@@ -11,6 +12,7 @@ from features.ambientacion import BloqueHielo, Oscuridad, Mina, ZonaVeneno
 from features.enemigos import Enemigo, obtener_posiciones_spawn
 from features.monedas import Moneda
 from features.items_powerups import ItemPowerUpManager
+from features.habilidades import aplicar_habilidad_personaje, Flecha
 from screens.pantalla_final import mostrar_pantalla_final
 
 ANCHO = 416
@@ -37,7 +39,6 @@ def destruir_bloque(matriz, x, y):
             return True, fila, col
     return False, None, None
 
-# --- NUEVO: Encuentra zona libre 2x2 para el boss ---
 def obtener_spawn_boss(matriz):
     opciones = []
     for fila in range(1, len(matriz)-1):
@@ -46,7 +47,6 @@ def obtener_spawn_boss(matriz):
                 matriz[fila][col+1] == " " and matriz[fila+1][col+1] == " "):
                 opciones.append((col * TAM_CASILLA, fila * TAM_CASILLA))
     if not opciones:
-        # Si por algún motivo no hay, regresa el centro
         return (TAM_CASILLA * (len(matriz[0])//2), TAM_CASILLA * (len(matriz)//2))
     return random.choice(opciones)
 
@@ -70,14 +70,19 @@ def mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual=1, puntos_acumu
     jugador.vida = vida
     jugador.ultimo_golpe = 0
 
+    # Habilidad individual del personaje
+    aplicar_habilidad_personaje(jugador, jugador.personaje_num)
+
     explosivos = Explosivax(max_bombas=3)
-    oscuridad = Oscuridad(jugador, matriz_juego, ANCHO, ALTO)
     monedas = Moneda(matriz_juego)
     items_manager = ItemPowerUpManager(matriz_juego)
 
-    bloques_hielo = minas = veneno = None
+    # --- Ambientaciones ---
+    bloques_hielo = minas = veneno = oscuridad = None
     if nivel_actual == 1:
         bloques_hielo = BloqueHielo(matriz_juego)
+    elif nivel_actual == 2:
+        oscuridad = Oscuridad(jugador, matriz_juego, ANCHO, ALTO)
     elif nivel_actual == 3:
         minas = Mina(matriz_juego)
     elif nivel_actual == 4:
@@ -93,7 +98,6 @@ def mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual=1, puntos_acumu
     # --- SPAWN ENEMIGOS POR NIVEL ---
     if nivel_actual == 4:
         cantidad_enemigos = 3
-        # Dos flecheros spawnean normalmente, boss solo donde cabe
         spawns = obtener_posiciones_spawn(matriz_juego, cantidad_enemigos-1, posiciones_prohibidas=posiciones_prohibidas)
         boss_spawn = obtener_spawn_boss(matriz_juego)
         enemigos = [
@@ -151,6 +155,7 @@ def mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual=1, puntos_acumu
                 pygame.quit()
                 sys.exit()
             elif evento.type == pygame.KEYDOWN:
+                # Colocar bomba
                 if evento.key == pygame.K_x:
                     x_bomba, y_bomba = jugador.obtener_posicion_bomba()
                     fila = y_bomba // TAM_CASILLA
@@ -158,18 +163,42 @@ def mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual=1, puntos_acumu
                     if 0 <= fila < len(matriz_juego) and 0 <= col < len(matriz_juego[0]):
                         if matriz_juego[fila][col] == " ":
                             explosivos.colocar_bomba(x_bomba, y_bomba, jugador=jugador)
-                elif evento.key in [pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4, pygame.K_5]:
+                # Usar ítems con teclas 1 a 3
+                elif evento.key in [pygame.K_1, pygame.K_2, pygame.K_3]:
                     tecla = str(evento.key - pygame.K_0)
                     tipo = jugador.items.get(tecla)
                     if tipo:
-                        items_manager.usar_item(jugador, tipo)
+                        items_manager.usar_item(jugador, tipo, vida)
+                # PU de vida: R
+                elif evento.key == pygame.K_r:
+                    if items_manager.pu_vida_recogido and not vida.powerup_activo:
+                        vida.ganar_vida()
+                        items_manager.pu_vida_recogido = False
+                # PU de daño: T
+                elif evento.key == pygame.K_t:
+                    if items_manager.pu_daño_recogido:
+                        jugador.daño_bomba += 1
+                        items_manager.pu_daño_recogido = False
+                # Disparar flecha (solo The Chosen One, con F)
+                elif evento.key == pygame.K_f and jugador.personaje_num == 3:
+                    tiempo_actual = pygame.time.get_ticks()
+                    if hasattr(jugador, "flechas_disponibles") and jugador.flechas_disponibles > 0:
+                        if tiempo_actual - getattr(jugador, "tiempo_ultima_flecha", 0) >= getattr(jugador, "cooldown_flecha", 2000):
+                            flecha = Flecha(jugador.rect.centerx, jugador.rect.centery, jugador.direccion if jugador.direccion != "parado" else "abajo")
+                            jugador.flechas.append(flecha)
+                            jugador.flechas_disponibles -= 1
+                            jugador.tiempo_ultima_flecha = tiempo_actual
 
         teclas = pygame.key.get_pressed()
         jugador.movimiento(teclas)
         jugador.actualizar_estado()
         explosivos.actualizar()
 
-        oscuridad.dibujar(VENTANA)
+        # ----------- DIBUJADO DEL FONDO Y OSCURIDAD ------------
+        dibujar_background(VENTANA, matriz_juego, nivel=nivel_actual)
+        if oscuridad:
+            oscuridad.dibujar(VENTANA)
+        # -------------------------------------------------------
 
         if bloques_hielo:
             bloques_hielo.aplicar_efecto(jugador)
@@ -179,13 +208,13 @@ def mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual=1, puntos_acumu
             veneno.aplicar_efecto(jugador, vida)
 
         items_manager.actualizar(jugador, vida)
-
         tiempo_actual = pygame.time.get_ticks()
 
+        # Enemigos y flechas enemigas
         for enemigo in enemigos:
             enemigo.actualizar(jugador, vida, matriz_juego, tiempo_actual, 1000)
 
-        # --- FLECHAS DE FLECHEROS Y JEFE: Daño al jugador ---
+        # Flechas de enemigos dañan al jugador
         for enemigo in enemigos:
             if hasattr(enemigo, "flechas"):
                 for flecha in enemigo.flechas[:]:
@@ -197,6 +226,24 @@ def mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual=1, puntos_acumu
                         else:
                             vida.perder_corazones()
                         enemigo.flechas.remove(flecha)
+
+        # Flechas del jugador (The Chosen One) - FIX: ignora None
+        if jugador.personaje_num == 3 and hasattr(jugador, "flechas"):
+            for flecha in [f for f in jugador.flechas if f is not None]:
+                flecha.mover()
+                fila = flecha.rect.centery // TAM_CASILLA
+                col = flecha.rect.centerx // TAM_CASILLA
+                fuera_mapa = (
+                    fila < 0 or fila >= len(matriz_juego) or
+                    col < 0 or col >= len(matriz_juego[0])
+                )
+                # Colisión con bloques destructibles
+                if not fuera_mapa and matriz_juego[fila][col] == "D":
+                    matriz_juego[fila][col] = " "
+                    jugador.flechas.remove(flecha)
+                # Colisión con bloques indestructibles o fuera del mapa
+                elif fuera_mapa or (not fuera_mapa and matriz_juego[fila][col] == "I"):
+                    jugador.flechas.remove(flecha)
 
         explosiones = []
         for bomba in explosivos.bombas:
@@ -240,7 +287,7 @@ def mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual=1, puntos_acumu
 
         puntos += monedas.recoger(jugador.rect)
 
-        # --- LLAVE SÓLO SI JEFE MUERE EN NIVEL 4 ---
+        # Llave solo aparece tras jefe muerto en nivel 4
         if nivel_actual == 4 and not tiene_llave and not llave.recogida:
             if jefe_muerto:
                 llave.visible = True
@@ -271,7 +318,7 @@ def mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual=1, puntos_acumu
             mostrar_pantalla_final(VENTANA, jugador_objeto.nombre, puntos, duracion_texto, False)
             return
 
-        dibujar_background(VENTANA, matriz_juego, nivel=nivel_actual)
+        # -------- DIBUJADO RESTANTE --------
         if bloques_hielo:
             bloques_hielo.dibujar(VENTANA)
         if minas:
@@ -286,6 +333,11 @@ def mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual=1, puntos_acumu
             if hasattr(enemigo, "flechas"):
                 for flecha in enemigo.flechas:
                     VENTANA.blit(flecha.image, flecha.rect)
+
+        # Flechas del jugador (The Chosen One) - FIX: ignora None
+        if jugador.personaje_num == 3 and hasattr(jugador, "flechas"):
+            for flecha in [f for f in jugador.flechas if f is not None]:
+                VENTANA.blit(flecha.image, flecha.rect)
 
         if (nivel_actual < 4 or jefe_muerto) and not tiene_llave and not llave.recogida and llave.visible:
             llave.dibujar(VENTANA)
