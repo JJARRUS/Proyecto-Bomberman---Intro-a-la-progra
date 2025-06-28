@@ -8,7 +8,7 @@ from features.llave_puerta import Llave, Puerta
 from features.movimiento_personajes import Jugador
 from features.bombas_explosion import Explosivax
 from features.ambientacion import BloqueHielo, Oscuridad, Mina, ZonaVeneno
-from features.enemigos import Enemigo
+from features.enemigos import Enemigo, obtener_posiciones_spawn
 from features.monedas import Moneda
 from features.items_powerups import ItemPowerUpManager
 from screens.pantalla_final import mostrar_pantalla_final
@@ -17,7 +17,7 @@ ANCHO = 416
 ALTO = 480 + 50
 TAM_CASILLA = 32
 HUD_HEIGHT = 50
-MAX_NIVELES = 4  # Cambia si agregas más niveles
+MAX_NIVELES = 4
 
 def mostrar_texto_nivel(ventana, texto="NIVEL 1"):
     ventana.fill((0, 0, 0))
@@ -44,7 +44,8 @@ def mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual=1, puntos_acumu
 
     matriz_juego, pos_llave, pos_puerta, pos_matriz_llave = obtener_matriz_y_posiciones(nivel_actual)
     fila_llave, col_llave = pos_matriz_llave
-    fila_puerta, col_puerta = pos_puerta[1] // TAM_CASILLA, pos_puerta[0] // TAM_CASILLA
+    col_puerta = pos_puerta[0] // TAM_CASILLA
+    fila_puerta = pos_puerta[1] // TAM_CASILLA
     puerta_visible = False
 
     vida = Vida(cantidad_vida=3)
@@ -61,11 +62,7 @@ def mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual=1, puntos_acumu
     monedas = Moneda(matriz_juego)
     items_manager = ItemPowerUpManager(matriz_juego)
 
-    # Activar solo la trampa que corresponde por nivel
-    bloques_hielo = None
-    minas = None
-    veneno = None
-
+    bloques_hielo = minas = veneno = None
     if nivel_actual == 1:
         bloques_hielo = BloqueHielo(matriz_juego)
     elif nivel_actual == 3:
@@ -73,13 +70,49 @@ def mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual=1, puntos_acumu
     elif nivel_actual == 4:
         veneno = ZonaVeneno(matriz_juego)
 
-    enemigos = [
-        Enemigo(160, 160),
-        Enemigo(320, 160),
-        Enemigo(160, 320)
-    ]
+    jugador_spawn = (1, 1)
+    llave_spawn = (col_llave, fila_llave)
+    puerta_spawn = (col_puerta, fila_puerta)
+    posiciones_prohibidas = {jugador_spawn, llave_spawn, puerta_spawn}
 
-    # --- CAMBIO DE FONDO Y MÚSICA SEGÚN NIVEL ---
+    jefe_muerto = False
+
+    if nivel_actual == 4:
+        cantidad_enemigos = 3
+        spawns = obtener_posiciones_spawn(matriz_juego, cantidad_enemigos, posiciones_prohibidas=posiciones_prohibidas)
+        enemigos = [
+            Enemigo(spawns[0][0], spawns[0][1], tipo="flechas"),
+            Enemigo(spawns[1][0], spawns[1][1], tipo="flechas"),
+            Enemigo(spawns[2][0], spawns[2][1], tipo="boss"),
+        ]
+    elif nivel_actual == 3:
+        cantidad_enemigos = 5
+        spawns = obtener_posiciones_spawn(matriz_juego, cantidad_enemigos, posiciones_prohibidas=posiciones_prohibidas)
+        enemigos = [
+            Enemigo(spawns[0][0], spawns[0][1], tipo="normal"),
+            Enemigo(spawns[1][0], spawns[1][1], tipo="normal"),
+            Enemigo(spawns[2][0], spawns[2][1], tipo="veloz"),
+            Enemigo(spawns[3][0], spawns[3][1], tipo="flechas"),
+            Enemigo(spawns[4][0], spawns[4][1], tipo="flechas"),
+        ]
+    elif nivel_actual == 2:
+        cantidad_enemigos = 4
+        spawns = obtener_posiciones_spawn(matriz_juego, cantidad_enemigos, posiciones_prohibidas=posiciones_prohibidas)
+        enemigos = [
+            Enemigo(spawns[0][0], spawns[0][1], tipo="normal"),
+            Enemigo(spawns[1][0], spawns[1][1], tipo="normal"),
+            Enemigo(spawns[2][0], spawns[2][1], tipo="veloz"),
+            Enemigo(spawns[3][0], spawns[3][1], tipo="veloz"),
+        ]
+    else:
+        cantidad_enemigos = 3
+        spawns = obtener_posiciones_spawn(matriz_juego, cantidad_enemigos, posiciones_prohibidas=posiciones_prohibidas)
+        enemigos = [
+            Enemigo(spawns[0][0], spawns[0][1], tipo="normal"),
+            Enemigo(spawns[1][0], spawns[1][1], tipo="normal"),
+            Enemigo(spawns[2][0], spawns[2][1], tipo="normal"),
+        ]
+
     mostrar_texto_nivel(VENTANA, f"NIVEL {nivel_actual}")
 
     if nivel_actual == 4:
@@ -136,6 +169,19 @@ def mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual=1, puntos_acumu
         for enemigo in enemigos:
             enemigo.actualizar(jugador, vida, matriz_juego, tiempo_actual, 1000)
 
+        # --- FLECHAS DE FLECHEROS Y JEFE: Daño al jugador ---
+        for enemigo in enemigos:
+            if hasattr(enemigo, "flechas"):
+                for flecha in enemigo.flechas[:]:
+                    if flecha.rect.colliderect(jugador.rect):
+                        if jugador.tiene_escudo:
+                            jugador.tiene_escudo = False
+                        elif vida.powerup_activo:
+                            vida.powerup_activo = False
+                        else:
+                            vida.perder_corazones()
+                        enemigo.flechas.remove(flecha)
+
         explosiones = []
         for bomba in explosivos.bombas:
             if bomba.exploto:
@@ -144,6 +190,8 @@ def mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual=1, puntos_acumu
         for enemigo in enemigos:
             if enemigo.verificar_muerte(explosiones):
                 puntos += 200
+                if hasattr(enemigo, "is_boss") and enemigo.is_boss:
+                    jefe_muerto = True
 
         for bomba in explosivos.bombas:
             if bomba.exploto:
@@ -151,7 +199,7 @@ def mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual=1, puntos_acumu
                 for x_bloq, y_bloq in coords:
                     destruido, fila, col = destruir_bloque(matriz_juego, x_bloq, y_bloq)
                     if destruido:
-                        puntos += 10  # ← +10 puntos al destruir bloque
+                        puntos += 10
                         if (x_bloq, y_bloq) == (col_llave * TAM_CASILLA, fila_llave * TAM_CASILLA):
                             llave.visible = True
                         if (x_bloq, y_bloq) == (col_puerta * TAM_CASILLA, fila_puerta * TAM_CASILLA):
@@ -176,12 +224,16 @@ def mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual=1, puntos_acumu
 
         puntos += monedas.recoger(jugador.rect)
 
+        # --- LLAVE SÓLO SI JEFE MUERE EN NIVEL 4 ---
+        if nivel_actual == 4 and not tiene_llave and not llave.recogida:
+            if jefe_muerto:
+                llave.visible = True
+
         if not tiene_llave and not llave.recogida and llave.visible and jugador.rect.colliderect(pygame.Rect(llave.x, llave.y, TAM_CASILLA, TAM_CASILLA)):
             tiene_llave = True
             llave.recogida = True
-            puntos += 100  # ← +100 puntos al recoger la llave
+            puntos += 100
 
-        # --- AVANCE DE NIVEL ---
         if puerta_visible and jugador.rect.colliderect(pygame.Rect(puerta.x, puerta.y, TAM_CASILLA, TAM_CASILLA)):
             if tiene_llave:
                 if nivel_actual < MAX_NIVELES:
@@ -195,7 +247,6 @@ def mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual=1, puntos_acumu
                     mostrar_pantalla_final(VENTANA, jugador_objeto.nombre, puntos, duracion_texto, True)
                     return
 
-        # --- DERROTA ---
         if vida.vida_actual <= 0:
             duracion = (pygame.time.get_ticks() - tiempo_inicio) // 1000
             minutos = duracion // 60
@@ -204,7 +255,6 @@ def mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual=1, puntos_acumu
             mostrar_pantalla_final(VENTANA, jugador_objeto.nombre, puntos, duracion_texto, False)
             return
 
-        # --- DIBUJADO ---
         dibujar_background(VENTANA, matriz_juego, nivel=nivel_actual)
         if bloques_hielo:
             bloques_hielo.dibujar(VENTANA)
@@ -217,8 +267,11 @@ def mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual=1, puntos_acumu
 
         for enemigo in enemigos:
             enemigo.dibujar(VENTANA)
+            if hasattr(enemigo, "flechas"):
+                for flecha in enemigo.flechas:
+                    VENTANA.blit(flecha.image, flecha.rect)
 
-        if not tiene_llave and not llave.recogida:
+        if (nivel_actual < 4 or jefe_muerto) and not tiene_llave and not llave.recogida and llave.visible:
             llave.dibujar(VENTANA)
 
         if puerta_visible:
@@ -228,7 +281,6 @@ def mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual=1, puntos_acumu
         explosivos.dibujar(VENTANA)
         jugador.dibujar(VENTANA)
 
-        # HUD
         pygame.draw.rect(VENTANA, (30, 30, 30), (0, ALTO - HUD_HEIGHT, ANCHO, HUD_HEIGHT))
         vida.visual(VENTANA, pos_x=10, pos_y=ALTO - 40)
         if tiene_llave:
@@ -239,12 +291,9 @@ def mostrar_pantalla_juego(VENTANA, jugador_objeto, nivel_actual=1, puntos_acumu
         VENTANA.blit(texto_tiempo, (310, ALTO - 35))
         texto_bombas = fuente_chica.render(f"Bombas: {jugador.bombas_disponibles}", True, (255, 255, 255))
         VENTANA.blit(texto_bombas, (200, ALTO - 35))
-
-        # --- NUEVO: PUNTOS ---
         texto_puntos = fuente_chica.render(f"Puntos: {puntos}", True, (255, 215, 0))
         VENTANA.blit(texto_puntos, (30, ALTO - 75))
 
         items_manager.mostrar_items_superiores(VENTANA, jugador, fuente_chica, ALTO)
-
         pygame.display.flip()
         pygame.time.Clock().tick(60)
